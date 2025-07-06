@@ -8,7 +8,9 @@
 <body>
 <h1>
     <?php
-        echo "Welcome to Laracasts: PHP for Beginners!";
+        $course = "PHP for Beginners";
+
+        echo "Welcome to Laracasts: $course!";
     ?>
 </h1>
 </body>
