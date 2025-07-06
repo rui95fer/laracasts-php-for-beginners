@@ -1,0 +1,24 @@
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore PHPStorm and VSCode project files
+.idea/
+.vscode/
+
+# Ignore OS generated files
+*.log
+
+# Ignore composer dependencies (if used in the future)
+vendor/
+
+# Ignore environment files
+.env
+.env.*
+
+# Ignore Herd and other PHP local dev tools
+herd/
+
+# Ignore node_modules (if using Node tools)
+node_modules/
+
