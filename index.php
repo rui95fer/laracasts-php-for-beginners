@@ -6,20 +6,21 @@
     <title>Laracasts: PHP for Beginners</title>
 </head>
 <body>
-    <?php
-        $book = "Learning PHP, MySQL & JavaScript";
-        $haveRead = true;
+<h1>Books</h1>
+<?php
+$books = [
+    "PHP for Beginners",
+    "Learning PHP, MySQL & JavaScript",
+    "Modern PHP Development"
+];
+?>
 
-        if ($haveRead) {
-            $message = "I have read the book: $book.";
-        } else {
-            $message = "I have not read the book: $book.";
-        }
-    ?>
-<h1>
+<ul>
     <?php
-        echo $message;
+    foreach ($books as $book) {
+        echo "<li>" . htmlspecialchars($book) . "</li>";
+    }
     ?>
-</h1>
+</ul>
 </body>
 </html>
