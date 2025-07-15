@@ -12,30 +12,55 @@ $books = [
     [
         'name' => 'PHP for Beginners',
         'author' => 'John Doe',
-        'purchase_url' => 'https://example.com/php-for-beginners'
+        'purchase_url' => 'https://example.com/php-for-beginners',
+        'release_year' => 2021
     ],
     [
         'name' => 'Learning PHP',
         'author' => 'Jane Smith',
-        'purchase_url' => 'https://example.com/learning-php'
+        'purchase_url' => 'https://example.com/learning-php',
+        'release_year' => 2020
     ],
     [
         'name' => 'Advanced PHP Programming',
         'author' => 'Alice Johnson',
-        'purchase_url' => 'https://example.com/advanced-php-programming'
-    ]
+        'purchase_url' => 'https://example.com/advanced-php-programming',
+        'release_year' => 2019
+    ],
+    [
+        'name' => 'Mastering PHP',
+        'author' => 'John Doe',
+        'purchase_url' => 'https://example.com/mastering-php',
+        'release_year' => 2021
+    ],
 ];
+
+function filterBooksByAuthor($books, $author): array
+{
+    return array_filter($books, function ($book) use ($author) {
+        return $book['author'] === $author;
+    });
+}
 ?>
 
-<ul>
-    <?php foreach ($books as $book): ?>
-        <li>
-            <strong><?php echo htmlspecialchars($book['name']); ?></strong>
-            by <?php echo htmlspecialchars($book['author']); ?>
-            - <a href="<?php echo htmlspecialchars($book['purchase_url']); ?>">Purchase</a>
-        </li>
-    <?php endforeach; ?>
-</ul>
+<?php
+$author = 'John Doe';
+
+$filteredBooks = filterBooksByAuthor($books, $author);
+
+if (!empty($filteredBooks)) {
+    echo "<ul>";
+    foreach ($filteredBooks as $book) {
+        echo "<li>";
+        echo "<strong>" . htmlspecialchars($book['name']) . "</strong> by " . htmlspecialchars($book['author']) . " (Released: " . htmlspecialchars($book['release_year']) . ")";
+        echo " - <a href='" . htmlspecialchars($book['purchase_url']) . "'>Purchase</a>";
+        echo "</li>";
+    }
+    echo "</ul>";
+} else {
+    echo "<p>No books found by author: " . htmlspecialchars($author) . "</p>";
+}
+?>
 
 </body>
 </html>
