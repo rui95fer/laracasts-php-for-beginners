@@ -35,32 +35,20 @@ $books = [
     ],
 ];
 
-function filterBooksByAuthor($books, $author): array
-{
-    return array_filter($books, function ($book) use ($author) {
-        return $book['author'] === $author;
-    });
-}
+$filteredBooks = array_filter($books, function ($book) {
+    return $book['release_year'] >= 2020;
+});
 ?>
 
-<?php
-$author = 'John Doe';
-
-$filteredBooks = filterBooksByAuthor($books, $author);
-
-if (!empty($filteredBooks)) {
-    echo "<ul>";
-    foreach ($filteredBooks as $book) {
-        echo "<li>";
-        echo "<strong>" . htmlspecialchars($book['name']) . "</strong> by " . htmlspecialchars($book['author']) . " (Released: " . htmlspecialchars($book['release_year']) . ")";
-        echo " - <a href='" . htmlspecialchars($book['purchase_url']) . "'>Purchase</a>";
-        echo "</li>";
-    }
-    echo "</ul>";
-} else {
-    echo "<p>No books found by author: " . htmlspecialchars($author) . "</p>";
-}
-?>
+<ul>
+    <?php foreach ($filteredBooks as $book): ?>
+        <li>
+            <strong><?php echo htmlspecialchars($book['name']); ?></strong> by <?php echo htmlspecialchars($book['author']); ?>
+            (<?php echo htmlspecialchars($book['release_year']); ?>) -
+            <a href="<?php echo htmlspecialchars($book['purchase_url']); ?>">Purchase</a>
+        </li>
+    <?php endforeach; ?>
+</ul>
 
 </body>
 </html>
