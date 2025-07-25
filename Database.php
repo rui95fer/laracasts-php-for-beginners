@@ -14,10 +14,10 @@ class Database
         ]);
     }
 
-    public function query($query): false|PDOStatement
+    public function query($query, $params = []): false|PDOStatement
     {
         $statement = $this->connection->prepare($query);
-        $statement->execute();
+        $statement->execute($params);
 
         return $statement;
     }
