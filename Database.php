@@ -2,16 +2,19 @@
 
 class Database
 {
-    public $connection;
+    public PDO $connection;
 
-    public function __construct()
+    public function __construct($config, $username = 'root', $password = '')
     {
-        $dsn = 'mysql:host=localhost;dbname=laracasts-php-for-beginners;user=root;charset=utf8mb4';
+        $dsn = 'mysql:' . http_build_query($config, '', ';');
 
-        $this->connection = new PDO($dsn);
+        $this->connection = new PDO($dsn, $username, $password, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        ]);
     }
 
-    public function query($query)
+    public function query($query): false|PDOStatement
     {
         $statement = $this->connection->prepare($query);
         $statement->execute();
