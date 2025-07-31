@@ -1,5 +1,7 @@
 <?php
 
+require 'Validator.php';
+
 $config = require 'config.php';
 $db = new Database($config['database']);
 
@@ -8,10 +10,8 @@ $heading = 'New Note';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $errors = [];
 
-    if (strlen(trim($_POST['body'])) < 10) {
-        $errors['body'] = 'The body must be at least 10 characters long.';
-    } elseif (strlen(trim($_POST['body'])) > 1000) {
-        $errors['body'] = 'The body must not exceed 1000 characters.';
+    if (Validator::string($_POST['body'], 10, 1000) === false) {
+        $errors['body'] = 'The body must be between 1 and 1000 characters.';
     }
 
     if (empty($errors)) {
