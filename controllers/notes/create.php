@@ -1,14 +1,11 @@
 <?php
 
-require 'Validator.php';
-
-$config = require 'config.php';
+$config = require base_path('config.php');
 $db = new Database($config['database']);
 
-$heading = 'New Note';
+$errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $errors = [];
 
     if (Validator::string($_POST['body'], 10, 1000) === false) {
         $errors['body'] = 'The body must be between 1 and 1000 characters.';
@@ -22,4 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-require 'views/notes/create.view.php';
+view("notes/create.view.php", [
+    'heading' => 'Create Note',
+    'errors' => $errors
+]);
