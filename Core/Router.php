@@ -54,7 +54,7 @@ class Router
     public function abort($code = 404): void
     {
         http_response_code($code);
-        require base_path("views/$code.view.php");
+        require base_path("views/$code.php");
         die();
     }
 }

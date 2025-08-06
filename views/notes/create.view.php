@@ -6,7 +6,7 @@
         <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
             <h1 class="text-2xl font-bold mb-4">Create a New Note</h1>
 
-            <form method="POST">
+            <form method="POST" action="/notes">
                 <div class="mb-4">
                     <label for="body" class="block text-sm font-medium text-gray-700">Body</label>
                     <textarea
