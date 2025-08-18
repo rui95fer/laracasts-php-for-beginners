@@ -8,13 +8,11 @@
                 <a href="/notes" class="text-blue-500 hover:text-blue-700">Back to notes</a>
             </p>
 
-            <p><?= $note['body'] ?></p>
+            <p><?= htmlspecialchars($note['body']) ?></p>
 
-            <form class="mt-4" method="POST">
-                <input type="hidden" name="_method" value="DELETE">
-                <input type="hidden" name="id" value="<?= $note['id'] ?>">
-                <button type="submit" class="text-red-500 hover:text-red-700">Delete</button>
-            </form>
+            <footer class="mt-4">
+                <a href="/note/edit?id=<?= htmlspecialchars($note['id']) ?>" class="text-blue-500 hover:text-blue-700">Edit</a>
+            </footer>
         </div>
     </main>
 
