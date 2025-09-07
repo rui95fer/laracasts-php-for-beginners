@@ -2,48 +2,62 @@
 
 namespace Core;
 
+use Core\Middleware\Middleware;
+
 class Router
 {
     protected array $routes = [];
 
-    public function add($method, $uri, $controller): void
+    public function add($method, $uri, $controller)
     {
         $this->routes[] = [
             'method' => $method,
             'uri' => $uri,
             'controller' => $controller
         ];
+
+        return $this;
     }
 
-    public function get($uri, $controller): void
+    public function get($uri, $controller)
     {
-        $this->add('GET', $uri, $controller);
+        return $this->add('GET', $uri, $controller);
     }
 
-    public function post($uri, $controller): void
+    public function post($uri, $controller)
     {
-        $this->add('POST', $uri, $controller);
+        return $this->add('POST', $uri, $controller);
     }
 
-    public function delete($uri, $controller): void
+    public function delete($uri, $controller)
     {
-        $this->add('DELETE', $uri, $controller);
+        return $this->add('DELETE', $uri, $controller);
     }
 
-    public function patch($uri, $controller): void
+    public function patch($uri, $controller)
     {
-        $this->add('PATCH', $uri, $controller);
+        return $this->add('PATCH', $uri, $controller);
     }
 
-    public function put($uri, $controller): void
+    public function put($uri, $controller)
     {
-        $this->add('PUT', $uri, $controller);
+        return $this->add('PUT', $uri, $controller);
+    }
+
+    public function only($key)
+    {
+        $this->routes[array_key_last($this->routes)]['middleware'] = $key;
     }
 
     public function route($uri, $method)
     {
         foreach ($this->routes as $route) {
             if ($route['uri'] === $uri && $route['method'] === strtoupper($method)) {
+                if (isset($route['middleware'])) {
+                    $middleware = Middleware::MAP[$route['middleware']];
+                    (new $middleware)->handle();
+                }
+
                 return require base_path($route['controller']);
             }
         }
