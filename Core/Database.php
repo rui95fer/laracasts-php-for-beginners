@@ -37,7 +37,7 @@ class Database
         return $results;
     }
 
-    public function find(): ?array
+    public function find()
     {
         return $this->statement->fetch();
     }
