@@ -36,18 +36,37 @@
                     <!-- Profile dropdown -->
                     <div class="relative ml-3">
                         <div>
-                            <?php if($_SESSION['user'] ?? false): ?>
+                            <?php if ($_SESSION['user'] ?? false): ?>
                                 <img
                                         src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
                                         alt=""
                                         class="size-8 rounded-full"
                                 />
+
                             <?php else: ?>
                                 <a href="/register"
-                                   class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Register</a>
+                                   class="<?= urlIs('/register') ? 'bg-gray-900 text-white' : 'text-gray-300' ?> hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+                                    Register
+                                </a>
+                                <a href="/login"
+                                   class="<?= urlIs('/login') ? 'bg-gray-900 text-white' : 'text-gray-300' ?> hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+                                    Login
+                                </a>
                             <?php endif; ?>
                         </div>
                     </div>
+
+                    <?php if ($_SESSION['user'] ?? false): ?>
+                        <div class="relative">
+                            <form method="POST" action="/logout">
+                                <input type="hidden" name="_method" value="DELETE">
+                                <button type="submit"
+                                        class="ml-4 rounded-md bg-gray-800 px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">
+                                    Logout
+                                </button>
+                            </form>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
             <div class="-mr-2 flex md:hidden">
