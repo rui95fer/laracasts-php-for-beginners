@@ -1,6 +1,8 @@
 <?php
 
-logout();
+use Core\Authenticator;
 
-header('Location: /');
-exit;
+$auth = new Authenticator();
+$auth->logout();
+
+redirect('/login');
