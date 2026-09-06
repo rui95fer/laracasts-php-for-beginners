@@ -198,3 +198,42 @@
   ```
 
 > **Takeaway:** Booleans and conditionals let PHP choose dynamic behavior, while handling both branches keeps the resulting output reliable.
+
+## Episode 06 - Arrays
+
+- **Use an array with `[]` to store a collection of related values in one variable.**
+  ```php
+  $books = [
+      'The Martian',
+      'The Langoliers',
+      'Project Hail Mary',
+  ];
+  ```
+
+- **Use `foreach` to run the same logic once for every item in an array.**
+  ```php
+  foreach ($books as $book) {
+      echo '<li>' . $book . '</li>';
+  }
+  ```
+
+- **Use braces around an interpolated variable when text follows it immediately.**
+  ```php
+  echo "{$book} - recommended";
+  ```
+
+- **Use the alternative `foreach` syntax when the loop contains a larger HTML fragment.**
+  ```php
+  <ul>
+      <?php foreach ($books as $book): ?>
+          <li><?php echo $book; ?></li>
+      <?php endforeach; ?>
+  </ul>
+  ```
+
+- **Use `<?= ... ?>` as the concise way to echo a value inside HTML.**
+  ```php
+  <li><?= $book ?></li>
+  ```
+
+> **Takeaway:** Arrays group related values, and `foreach` lets you process each item while keeping generated HTML readable.
