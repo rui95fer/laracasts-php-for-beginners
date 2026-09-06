@@ -237,3 +237,41 @@
   ```
 
 > **Takeaway:** Arrays group related values, and `foreach` lets you process each item while keeping generated HTML readable.
+
+## Episode 07 - Associative Arrays
+
+- **Use zero-based indexes to access individual items in a numeric array; index `1` returns the second item.**
+  ```php
+  $books = [
+      'The Martian',
+      'The Langoliers',
+      'Project Hail Mary',
+  ];
+
+  echo $books[1]; // The Langoliers
+  ```
+
+- **Use an associative array to give each value a descriptive key with the `=>` operator.**
+  ```php
+  $books = [
+      [
+          'name' => 'The Langoliers',
+          'author' => 'Stephen King',
+          'purchase_url' => 'https://example.com/books/the-langoliers',
+      ],
+  ];
+  ```
+
+- **Access an associative-array value by its key instead of relying on its numeric position.**
+  ```php
+  echo $books[0]['purchase_url'];
+  ```
+
+- **When looping over an array of associative arrays, each item is an array, so access the field you want by key.**
+  ```php
+  foreach ($books as $book) {
+      echo $book['name'];
+  }
+  ```
+
+> **Takeaway:** Associative arrays make structured data easier to understand and retrieve because each value has a meaningful key.
