@@ -567,3 +567,69 @@
   ```
 
 > **Takeaway:** Building multiple PHP pages exposes the need for routing and reusable views before duplicated HTML becomes difficult to maintain.
+
+## Episode 13 - PHP Partials
+
+- **Keep view templates in a dedicated `views/` directory so the project root does not become crowded with page markup.**
+  ```php
+  <?php
+
+  require 'views/about.view.php';
+  ```
+
+- **Use a `views/partials/` directory for reusable pieces of HTML shared by multiple views.**
+  ```text
+  views/
+    about.view.php
+    contact.view.php
+    partials/
+      nav.php
+      head.php
+      banner.php
+      footer.php
+  ```
+
+- **Replace copied navigation markup with a required `nav.php` partial so site-wide link changes happen in one place.**
+  ```php
+  <!-- In every view, instead of duplicating the full navigation. -->
+  <?php require 'partials/nav.php'; ?>
+  ```
+
+- **Extract repeated document sections into `head.php` and `footer.php` so views contain mostly page-specific content.**
+  ```php
+  <?php require 'partials/head.php'; ?>
+
+  <main>
+      <!-- Page-specific content. -->
+  </main>
+
+  <?php require 'partials/footer.php'; ?>
+  ```
+
+- **Extract the shared banner markup into `banner.php`, but keep page-specific text out of the partial.**
+  ```php
+  <?php require 'partials/banner.php'; ?>
+  ```
+
+- **Treat each page entry file as a controller-like layer that prepares variables before requiring its corresponding view.**
+  ```php
+  <?php
+
+  $heading = 'About Us';
+  require 'views/about.view.php';
+  ```
+
+- **Define the heading in each page file and read it in the banner partial so one shared template can render different pages.**
+  ```php
+  <?php
+
+  // about.php
+  $heading = 'About Us';
+  require 'views/about.view.php';
+  ?>
+
+  <!-- views/partials/banner.php -->
+  <h1><?= $heading ?></h1>
+  ```
+
+> **Takeaway:** Partials eliminate duplicated HTML, while page entry files provide the dynamic values that shared views need.
