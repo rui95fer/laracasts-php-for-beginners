@@ -431,3 +431,77 @@
   ```
 
 > **Takeaway:** Separating PHP logic from the view makes both data processing and presentation easier to understand and change.
+
+## Episode 11 - Technical Check-in #1 (With Exam)
+
+- **Define PHP variables with a `$`-prefixed name, assign values with `=`, and end statements with `;`.**
+  ```php
+  $businessName = 'Lerikas';
+  $monthlyCost = 15;
+  ```
+
+- **Use an associative array when related attributes belong together, then access each value by its key.**
+  ```php
+  $business = [
+      'name' => 'Lerikas',
+      'monthlyCost' => 15,
+      'categories' => ['Testing', 'PHP training', 'JavaScript training'],
+  ];
+
+  echo $business['name'];
+  ```
+
+- **Use an `if` statement to change behavior when a value crosses a threshold.**
+  ```php
+  if ($business['monthlyCost'] > 99) {
+      echo 'Not interested.';
+  }
+  ```
+
+- **Use `foreach` to process every value in a collection, such as the categories a business offers.**
+  ```php
+  foreach ($business['categories'] as $category) {
+      echo $category . '<br>';
+  }
+  ```
+
+- **Use a function to group the steps for a reusable action such as registering a user.**
+  ```php
+  function register($user)
+  {
+      // Save the user, sign them in, and send a welcome email.
+  }
+  ```
+
+- **Use `require` or `include` to keep data preparation and application logic separate from the view that renders it.**
+  ```php
+  <?php
+  $business = [
+      'name' => 'Lerikas',
+      'categories' => ['Testing', 'PHP training', 'JavaScript training'],
+  ];
+
+  function register($user)
+  {
+      // Registration logic belongs here.
+  }
+
+  require 'index.view.php';
+  ```
+
+- **Render prepared variables in the view with short echo tags and alternative `foreach` syntax.**
+  ```php
+  <h1><?= $business['name'] ?></h1>
+  <ul>
+      <?php foreach ($business['categories'] as $category): ?>
+          <li><?= $category ?></li>
+      <?php endforeach; ?>
+  </ul>
+  ```
+
+- **Complete the quiz before moving to Section 2 to check your understanding of the chapter fundamentals.**
+  ```text
+  Section 1 -> Technical Check-in #1 quiz -> Section 2
+  ```
+
+> **Takeaway:** PHP fundamentals work together: prepare data, apply conditions or loops, package behavior in functions, and render the result through a separate view.
