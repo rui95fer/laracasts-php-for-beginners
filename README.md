@@ -321,3 +321,83 @@
   ```
 
 > **Takeaway:** Functions make reusable behavior easier to call, and filtering lets you return only the data that matches a condition.
+
+## Episode 09 - Lambda Functions
+
+- **Refactor duplicated filters when only the comparison changes; one generic filter is easier to extend.**
+  ```php
+  // Before: the loop would be duplicated.
+  $booksByAuthor = filterByAuthor($books, 'Andy Weir');
+  $booksByYear = filterByYear($books, 1968);
+
+  // After: one filter accepts the field and value.
+  $booksByAuthor = filter($books, 'author', 'Andy Weir');
+  $booksByYear = filter($books, 'releaseYear', 1968);
+  ```
+
+- **Extract a function's returned array into a variable when that makes the value being iterated easier to understand.**
+  ```php
+  $filteredBooks = filterByAuthor($books, 'Andy Weir');
+
+  foreach ($filteredBooks as $book) {
+      echo $book['name'];
+  }
+  ```
+
+- **An anonymous function, also called a lambda function, has no name and can be stored in a variable.**
+  ```php
+  $matchesAuthor = function ($book) {
+      return $book['author'] === 'Andy Weir';
+  };
+
+  if ($matchesAuthor($book)) {
+      echo $book['name'];
+  }
+  ```
+
+- **Make a filter generic by accepting the collection, the key, and the value that the key should match.**
+  ```php
+  function filter($items, $key, $value)
+  {
+      $filteredItems = [];
+
+      foreach ($items as $item) {
+          if ($item[$key] === $value) {
+              $filteredItems[] = $item;
+          }
+      }
+
+      return $filteredItems;
+  }
+
+  $booksByAuthor = filter($books, 'author', 'Andy Weir');
+  ```
+
+- **Pass a callback when the caller needs to control how each item is accepted, such as using a range comparison instead of equality.**
+  ```php
+  function filter($items, $fn)
+  {
+      $filteredItems = [];
+
+      foreach ($items as $item) {
+          if ($fn($item)) {
+              $filteredItems[] = $item;
+          }
+      }
+
+      return $filteredItems;
+  }
+
+  $recentBooks = filter($books, function ($book) {
+      return $book['releaseYear'] >= 2000;
+  });
+  ```
+
+- **Use PHP's `array_filter()` when its built-in callback-based filtering already solves the problem.**
+  ```php
+  $booksByAuthor = array_filter($books, function ($book) {
+      return $book['author'] === 'Andy Weir';
+  });
+  ```
+
+> **Takeaway:** Anonymous functions let callers provide filtering rules, so one generic filter can handle many kinds of comparisons.
