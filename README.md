@@ -275,3 +275,49 @@
   ```
 
 > **Takeaway:** Associative arrays make structured data easier to understand and retrieve because each value has a meaningful key.
+
+## Episode 08 - Functions and Filtering
+
+- **Use `=` to assign a value and `===` to compare values in a condition.**
+  ```php
+  $author = 'Andy Weir';
+
+  if ($book['author'] === $author) {
+      echo $book['name'];
+  }
+  ```
+
+- **Define a function to isolate reusable behavior; its body runs when called, and `return` sends a result back.**
+  ```php
+  function bookLabel($book)
+  {
+      return $book['name'] . ' by ' . $book['author'];
+  }
+
+  echo bookLabel($book);
+  ```
+
+- **Build a filtered collection by checking each item and appending only matching items to a new array.**
+  ```php
+  function filterByAuthor($books, $author)
+  {
+      $filteredBooks = [];
+
+      foreach ($books as $book) {
+          if ($book['author'] === $author) {
+              $filteredBooks[] = $book;
+          }
+      }
+
+      return $filteredBooks;
+  }
+  ```
+
+- **Pass values as arguments so the same filter can work for any author instead of using a hard-coded name.**
+  ```php
+  foreach (filterByAuthor($books, 'Andy Weir') as $book) {
+      echo $book['name'];
+  }
+  ```
+
+> **Takeaway:** Functions make reusable behavior easier to call, and filtering lets you return only the data that matches a condition.
