@@ -56,3 +56,50 @@
   ```
 
 > **Takeaway:** Pick a comfortable editor and one local environment that lets you run PHP and MySQL; the specific tool matters less than getting started.
+
+## Episode 03 - Your First PHP Tag
+
+- **Choose the project directory based on your PHP environment; Homebrew can serve from anywhere, while MAMP may require its configured document root.**
+  ```text
+  Homebrew: ~/websites/demo
+  MAMP: use the directory specified by MAMP
+  ```
+
+- **Create a folder for your sites and a separate folder for each project.**
+  ```bash
+  mkdir websites
+  cd websites
+  mkdir demo
+  cd demo
+  ```
+
+- **Use `index.html` as the default entry file for a static page at the site root.**
+  ```text
+  demo/
+    index.html
+  ```
+
+- **Use PHP's built-in server when your environment does not already provide Apache or Nginx.**
+  ```bash
+  php -S localhost:8888
+  ```
+
+- **Rename the entry file to `index.php` when the page needs PHP; existing HTML still renders normally.**
+  ```text
+  index.html -> index.php
+  ```
+
+- **Write PHP inside `<?php ... ?>` blocks rather than placing raw text inside the block.**
+  ```php
+  <?php
+  echo 'Hello, world';
+  ?>
+  ```
+
+- **Use `echo` to print a string into the page, and end the statement with a semicolon.**
+  ```php
+  <h1><?php echo 'Hello, world'; ?></h1>
+  <p><?php echo 'Hello, universe'; ?></p>
+  ```
+
+> **Takeaway:** PHP turns a static HTML page into a dynamic page by letting you generate output inside PHP blocks.
