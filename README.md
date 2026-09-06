@@ -154,3 +154,47 @@
   ```
 
 > **Takeaway:** Variables let PHP produce dynamic output while keeping the surrounding HTML and output logic reusable.
+
+## Episode 05 - Conditionals and Booleans
+
+- **Use a Boolean value, `true` or `false`, for a yes-or-no state such as whether a user has read a book.**
+  ```php
+  $name = 'Dark Matter';
+  $read = true;
+  ```
+
+- **Use an `if` statement to run code only when its condition evaluates to `true`.**
+  ```php
+  if ($read) {
+      $message = "You have read $name.";
+  }
+  ```
+
+- **Use `else` for the false path and assign the result in both branches so the output variable is always defined.**
+  ```php
+  if ($read) {
+      $message = "You have read $name.";
+  } else {
+      $message = "You have not read $name.";
+  }
+  ```
+
+- **Use `<?= ... ?>` as shorthand for echoing a value directly into HTML; the closing tag makes the semicolon optional.**
+  ```php
+  <p><?= $message ?></p>
+  ```
+
+- **Remove a conditional and its unreachable branch when a flag is hard-coded to a constant value such as `true`.**
+  ```php
+  // Before
+  if ($read) {
+      $message = "You have read $name.";
+  } else {
+      $message = "You have not read $name.";
+  }
+
+  // After
+  $message = "You have read $name.";
+  ```
+
+> **Takeaway:** Booleans and conditionals let PHP choose dynamic behavior, while handling both branches keeps the resulting output reliable.
