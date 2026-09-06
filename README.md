@@ -401,3 +401,33 @@
   ```
 
 > **Takeaway:** Anonymous functions let callers provide filtering rules, so one generic filter can handle many kinds of comparisons.
+
+## Episode 10 - Separate Logic From the Template
+
+- **Separate data preparation from HTML rendering because a file that handles both can become difficult to read and maintain.**
+  ```text
+  Before: index.php contains data logic and HTML.
+  After:  index.php prepares data; index.view.php renders it.
+  ```
+
+- **Keep `index.php` focused on preparing data and requiring the view; a PHP-only file does not need a closing tag.**
+  ```php
+  <?php
+
+  $filteredBooks = array_filter($books, function ($book) {
+      return $book['author'] === 'Andy Weir';
+  });
+
+  require 'index.view.php';
+  ```
+
+- **Keep `index.view.php` effectively dumb by using prepared variables only to render the page.**
+  ```php
+  <ul>
+      <?php foreach ($filteredBooks as $book): ?>
+          <li><?= $book['name'] ?></li>
+      <?php endforeach; ?>
+  </ul>
+  ```
+
+> **Takeaway:** Separating PHP logic from the view makes both data processing and presentation easier to understand and change.
