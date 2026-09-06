@@ -103,3 +103,54 @@
   ```
 
 > **Takeaway:** PHP turns a static HTML page into a dynamic page by letting you generate output inside PHP blocks.
+
+## Episode 04 - Variables
+
+- **Use `<?php ... ?>` blocks to mix PHP with HTML in the same document.**
+  ```php
+  <h1><?php echo 'Hello, world'; ?></h1>
+  ```
+
+- **Use `echo` to display a string, and end each PHP statement with a semicolon.**
+  ```php
+  <?php
+  echo 'Hello, universe';
+  ?>
+  ```
+
+- **Use `.` to concatenate strings in PHP; `+` is not the string concatenation operator.**
+  ```php
+  echo 'Hello, ' . 'universe';
+  ```
+
+- **Create a variable with a `$`-prefixed name and assign it a value with `=`.**
+  ```php
+  $greeting = 'Hello';
+  echo $greeting . ' everybody';
+  ```
+
+- **Use variables when values may come from application data or later processing, so the same output code can handle different values.**
+  ```php
+  $user = ['name' => 'Taylor', 'greeting' => 'Hello'];
+
+  echo $user['greeting'] . ' ' . $user['name'];
+  ```
+
+- **Refactoring changes the code without changing the result shown to the user.**
+  ```php
+  // Before
+  echo $greeting . ' everybody';
+
+  // After
+  echo "$greeting everybody";
+  ```
+
+- **Double-quoted strings interpolate variables, while single-quoted strings treat them as literal text.**
+  ```php
+  $name = 'Taylor';
+
+  echo "Hello, $name"; // Hello, Taylor
+  echo 'Hello, $name'; // Hello, $name
+  ```
+
+> **Takeaway:** Variables let PHP produce dynamic output while keeping the surrounding HTML and output logic reusable.
