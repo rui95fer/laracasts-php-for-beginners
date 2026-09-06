@@ -505,3 +505,65 @@
   ```
 
 > **Takeaway:** PHP fundamentals work together: prepare data, apply conditions or loops, package behavior in functions, and render the result through a separate view.
+
+## Episode 12 - Page Links
+
+- **Start Section 2 with an existing HTML boilerplate so you can focus on building a PHP and MySQL website instead of styling from scratch.**
+  ```text
+  Section 2 project: PHP + MySQL website
+  Starting point: existing HTML boilerplate
+  ```
+
+- **Import Tailwind CSS and add `h-full` to the `html` and `body` elements when the page needs a full-height layout.**
+  ```html
+  <html class="h-full">
+  <head>
+      <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="h-full">
+  ```
+
+- **Use explicit PHP file paths in navigation until routing can map clean URLs such as `/about` to a page.**
+  ```html
+  <nav>
+      <a href="/">Home</a>
+      <a href="/about.php">About Us</a>
+      <a href="/contact.php">Contact</a>
+  </nav>
+  ```
+
+- **Create a page entry file that requires its matching view so each page can keep its HTML in a separate template.**
+  ```php
+  <?php
+
+  require 'about.view.php';
+  ```
+
+- **Create the contact page with the same entry-file and view pattern used for the about page.**
+  ```php
+  <?php
+
+  require 'contact.view.php';
+  ```
+
+- **Update copied views with page-specific content so the URL and heading identify the same page.**
+  ```php
+  <!-- about.view.php -->
+  <h1>About Us</h1>
+  ```
+
+- **The built-in PHP server uses `index.php` as the default entry point when a request does not resolve to a specific page.**
+  ```text
+  /            -> index.php
+  /about.php   -> about.php
+  /about       -> index.php (until routing is added)
+  ```
+
+- **Duplicating navigation across every view makes site-wide changes expensive, so shared markup should be extracted as more pages are added.**
+  ```text
+  index.view.php   -> copied navigation
+  about.view.php   -> copied navigation
+  contact.view.php -> copied navigation
+  ```
+
+> **Takeaway:** Building multiple PHP pages exposes the need for routing and reusable views before duplicated HTML becomes difficult to maintain.
