@@ -796,3 +796,53 @@
   ```
 
 > **Takeaway:** A small router turns clean URLs into a centralized dispatch layer while keeping controllers, views, and bootstrap code separate.
+
+## Episode 16 - Create a MySQL Database
+
+- **Create the application database with `CREATE DATABASE`, and end SQL statements with a semicolon.**
+  ```sql
+  CREATE DATABASE myapp;
+  ```
+
+- **Connect a local MySQL client such as TablePlus with the host, port, and credentials used by the local server.**
+  ```text
+  Host: localhost
+  Port: 3306
+  User: root
+  Password: none
+  Database: myapp
+  ```
+
+- **Represent blog posts in a table and choose a column type that matches each value, such as `VARCHAR(255)` for a required title.**
+  ```sql
+  CREATE TABLE posts (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      title VARCHAR(255) NOT NULL
+  );
+  ```
+
+- **Use a primary key as a unique row identifier, and let the auto-incrementing ID be generated when records are inserted.**
+  ```sql
+  INSERT INTO posts (title) VALUES
+      ('My first blog post'),
+      ('My second blog post');
+
+  -- The generated IDs are 1 and 2.
+  ```
+
+- **Use relationships to connect records across tables, such as linking each post to the user who created it.**
+  ```text
+  users.id -> posts.user_id
+  ```
+
+- **Use `ALTER TABLE` to add fields when the initial schema needs more post data.**
+  ```sql
+  ALTER TABLE posts ADD body TEXT;
+  ```
+
+- **Use `UPDATE` with a `WHERE` clause to change one existing record without changing every row.**
+  ```sql
+  UPDATE posts SET title = 'Updated title' WHERE id = 1;
+  ```
+
+> **Takeaway:** A relational database stores structured records in tables, uses primary keys to identify rows, and connects related records across tables.
