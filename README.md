@@ -846,3 +846,60 @@
   ```
 
 > **Takeaway:** A relational database stores structured records in tables, uses primary keys to identify rows, and connects related records across tables.
+
+## Episode 17 - PDO First Steps
+
+- **Use `SELECT` to choose columns from a table, and use `*` when you need every column.**
+  ```sql
+  SELECT * FROM posts;
+  SELECT id, title FROM posts;
+  ```
+
+- **Add a `WHERE` clause when you need only rows matching a condition such as a post's primary key.**
+  ```sql
+  SELECT * FROM posts WHERE id = 1;
+  ```
+
+- **Instantiate a class with `new`, access object properties and methods with `->`, and use `$this` for the current instance.**
+  ```php
+  class Person
+  {
+      public $name;
+
+      public function breathe()
+      {
+          echo $this->name . ' is breathing';
+      }
+  }
+
+  $person = new Person();
+  $person->name = 'John Doe';
+  $person->breathe();
+  ```
+
+- **Build a PDO DSN with the MySQL driver, host, port, database, and character set, then pass the credentials to `new PDO`.**
+  ```php
+  $dsn = 'mysql:host=localhost;port=3306;dbname=myapp;charset=utf8mb4';
+
+  $pdo = new PDO($dsn, 'root', '');
+  ```
+
+- **Prepare a SQL statement before executing it so PDO can send the query to MySQL.**
+  ```php
+  $statement = $pdo->prepare('SELECT * FROM posts');
+  $statement->execute();
+  ```
+
+- **Fetch all rows as associative arrays with `PDO::FETCH_ASSOC` so columns can be accessed by name without duplicate numeric keys.**
+  ```php
+  $posts = $statement->fetchAll(PDO::FETCH_ASSOC);
+  ```
+
+- **Loop over the fetched rows to render database values in the page.**
+  ```php
+  foreach ($posts as $post) {
+      echo '<li>' . $post['title'] . '</li>';
+  }
+  ```
+
+> **Takeaway:** PDO turns a database query into a repeatable PHP flow: connect, prepare, execute, fetch, and render.
