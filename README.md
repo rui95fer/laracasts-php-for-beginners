@@ -633,3 +633,87 @@
   ```
 
 > **Takeaway:** Partials eliminate duplicated HTML, while page entry files provide the dynamic values that shared views need.
+
+## Episode 14 - Superglobals and Current Page Styling
+
+- **Use `echo` for strings, and use `var_dump()` when you need to inspect an array or object.**
+  ```php
+  $value = ['message' => 'Debugging output'];
+
+  echo $value; // Warning: Array to string conversion
+  var_dump($value);
+  ```
+
+- **Use the `$_SERVER` superglobal to access request and server information from any script.**
+  ```php
+  var_dump($_SERVER);
+  ```
+
+- **Read `$_SERVER['REQUEST_URI']` to inspect the current request URI, such as `/` or `/about`.**
+  ```php
+  echo $_SERVER['REQUEST_URI'];
+  ```
+
+- **Wrap complex debug output in `<pre>` tags to preserve its formatting.**
+  ```php
+  echo '<pre>';
+  var_dump($_SERVER);
+  echo '</pre>';
+  ```
+
+- **Call `die()` after a debug dump when you need to stop the rest of the page from executing.**
+  ```php
+  var_dump($value);
+  die();
+  ```
+
+- **Create a `dd()` helper to combine formatted dumping and execution termination.**
+  ```php
+  function dd($value): void
+  {
+      echo '<pre>';
+      var_dump($value);
+      echo '</pre>';
+      die();
+  }
+
+  dd($_SERVER);
+  ```
+
+- **Replace hardcoded active classes with a ternary condition so only the current page is highlighted.**
+  ```php
+  <!-- Before: every visit uses the active classes. -->
+  <a href="/" class="bg-gray-900 text-white">Home</a>
+
+  <!-- After: the classes depend on the current URI. -->
+  <a href="/"
+     class="<?= $_SERVER['REQUEST_URI'] === '/' ? 'bg-gray-900 text-white' : 'text-gray-300' ?>">
+      Home
+  </a>
+  ```
+
+- **Extract the URI comparison into a reusable `urlIs()` helper so navigation markup stays readable.**
+  ```php
+  <?php
+
+  function urlIs($value): bool
+  {
+      return $_SERVER['REQUEST_URI'] === $value;
+  }
+
+  ?>
+  <a href="/about"
+     class="<?= urlIs('/about') ? 'bg-gray-900 text-white' : 'text-gray-300' ?>">
+      About
+  </a>
+  ```
+
+- **Keep shared helper definitions in one `functions.php` file and load it before rendering pages to avoid duplication.**
+  ```php
+  <?php
+
+  require 'functions.php';
+  require 'views/index.view.php';
+  ```
+
+> **Takeaway:** Superglobals reveal the current request, while shared debugging and URL helpers keep dynamic navigation styling concise and reusable.
