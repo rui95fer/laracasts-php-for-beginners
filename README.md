@@ -717,3 +717,82 @@
   ```
 
 > **Takeaway:** Superglobals reveal the current request, while shared debugging and URL helpers keep dynamic navigation styling concise and reusable.
+
+## Episode 15 - Make a PHP Router
+
+- **Use a single entry point to centralize URL-to-controller mapping instead of exposing each controller as a public file path.**
+  ```text
+  /about -> index.php -> controllers/about.php
+  ```
+
+- **Load shared helpers before controllers and remove duplicate helper imports so functions are not declared twice.**
+  ```php
+  // index.php
+  require 'functions.php';
+  require 'controllers/about.php'; // The controller does not require functions.php again.
+  ```
+
+- **Extract only the path from `$_SERVER['REQUEST_URI']` so query strings do not break route matching.**
+  ```php
+  $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+  // /contact?name=Taylor becomes /contact
+  ```
+
+- **Represent routes as an associative array so each clean URI maps directly to a controller.**
+  ```php
+  $routes = [
+      '/' => 'controllers/index.php',
+      '/about' => 'controllers/about.php',
+      '/contact' => 'controllers/contact.php',
+  ];
+  ```
+
+- **Use `array_key_exists()` to dispatch only when the requested URI has a registered route.**
+  ```php
+  if (array_key_exists($uri, $routes)) {
+      require $routes[$uri];
+  }
+  ```
+
+- **Return an HTTP 404 response and render a dedicated view when no route matches instead of showing a blank page.**
+  ```php
+  http_response_code(404);
+  require 'views/404.php';
+  die();
+  ```
+
+- **Keep the 404 view independent of page-specific partials when those partials require variables such as `$heading`.**
+  ```php
+  <!-- views/404.php -->
+  <h1>Sorry, page not found.</h1>
+  <a href="/">Go back home</a>
+  ```
+
+- **Wrap request termination in an `abort()` helper and default its status code to 404 while allowing overrides.**
+  ```php
+  function abort($code = 404)
+  {
+      http_response_code($code);
+      require "views/{$code}.php";
+      die();
+  }
+  ```
+
+- **Move route selection into `routeToController()` and keep the bootstrap file small by extracting routing into `router.php`.**
+  ```php
+  // router.php
+  function routeToController($uri, $routes)
+  {
+      if (!array_key_exists($uri, $routes)) {
+          abort();
+      }
+
+      require $routes[$uri];
+  }
+
+  // index.php
+  require 'functions.php';
+  require 'router.php';
+  ```
+
+> **Takeaway:** A small router turns clean URLs into a centralized dispatch layer while keeping controllers, views, and bootstrap code separate.
