@@ -903,3 +903,93 @@
   ```
 
 > **Takeaway:** PDO turns a database query into a repeatable PHP flow: connect, prepare, execute, fetch, and render.
+
+## Episode 18 - Extract a PHP Database Class
+
+- **Use a `Database` class to group connection and query behavior, and name its SQL method `query()` because methods represent actions.**
+  ```php
+  class Database
+  {
+      public function query($query)
+      {
+          // Prepare and execute the SQL query here.
+      }
+  }
+
+  $db = new Database();
+  ```
+
+- **Extract the existing PDO workflow into the class so the calling page no longer manages the connection and statement directly.**
+  ```php
+  // Before
+  $statement = $pdo->prepare('SELECT * FROM posts');
+  $statement->execute();
+  $posts = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+  // After
+  $posts = $db->query('SELECT * FROM posts')
+      ->fetchAll(PDO::FETCH_ASSOC);
+  ```
+
+- **Accept the SQL string as a `query()` argument so one database object can execute different queries.**
+  ```php
+  $posts = $db->query('SELECT * FROM posts WHERE id > 1')
+      ->fetchAll(PDO::FETCH_ASSOC);
+
+  $users = $db->query('SELECT * FROM users')
+      ->fetchAll(PDO::FETCH_ASSOC);
+  ```
+
+- **Use `__construct()` for work that should happen automatically when `new Database()` creates an instance, such as initializing PDO.**
+  ```php
+  class Database
+  {
+      public function __construct()
+      {
+          $this->connection = new PDO(
+              'mysql:host=localhost;port=3306;dbname=myapp;charset=utf8mb4',
+              'root',
+              ''
+          );
+      }
+  }
+  ```
+
+- **Store the PDO object on `$this->connection` so every method on the same instance can reuse the database connection.**
+  ```php
+  class Database
+  {
+      public $connection;
+
+      public function query($query)
+      {
+          $statement = $this->connection->prepare($query);
+          $statement->execute();
+
+          return $statement;
+      }
+  }
+  ```
+
+- **Return the statement from `query()` instead of choosing a fetch mode inside the class so the caller controls the result shape.**
+  ```php
+  $post = $db->query('SELECT * FROM posts WHERE id = 1')
+      ->fetch(PDO::FETCH_ASSOC);
+
+  $posts = $db->query('SELECT * FROM posts')
+      ->fetchAll(PDO::FETCH_ASSOC);
+  ```
+
+- **Move a class into a class-only `Database.php` file and require it before instantiating the class.**
+  ```php
+  // Database.php
+  <?php
+  class Database { /* ... */ }
+
+  // index.php
+  require 'Database.php';
+
+  $db = new Database();
+  ```
+
+> **Takeaway:** A small `Database` abstraction centralizes connection and query setup while letting the caller choose the SQL and result shape.
