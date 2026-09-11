@@ -1134,3 +1134,51 @@
   ```
 
 > **Takeaway:** Never inline user input into SQL; use prepared statements with bound parameters to keep malicious text from becoming executable SQL.
+
+## Episode 21 - Database Tables and Indexes
+
+- **Name tables using plural nouns and choose column types that fit the expected data, such as `TEXT` for unbounded note content.**
+  ```sql
+  CREATE TABLE notes (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      body TEXT NOT NULL
+  );
+  ```
+
+- **Store user accounts in a dedicated `users` table with a primary key and required fields for identity.**
+  ```sql
+  CREATE TABLE users (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      email VARCHAR(255) NOT NULL
+  );
+  ```
+
+- **Add a unique index to columns such as `email` to enforce uniqueness at the database level and prevent duplicate entries.**
+  ```sql
+  ALTER TABLE users ADD UNIQUE (email);
+  ```
+
+- **Add a foreign key column whose data type matches the referenced table's primary key, and set it to `NOT NULL` when child records must have an owner.**
+  ```sql
+  ALTER TABLE notes ADD user_id INT NOT NULL;
+  ```
+
+- **Define a foreign key constraint to link the child column to the parent table and prevent orphan records pointing to non-existent rows.**
+  ```sql
+  ALTER TABLE notes
+  ADD CONSTRAINT fk_notes_users
+  FOREIGN KEY (user_id) REFERENCES users(id);
+  ```
+
+- **Configure `ON DELETE CASCADE` on foreign key constraints so deleting a parent record automatically cleans up its dependent records.**
+  ```sql
+  ALTER TABLE notes
+  ADD CONSTRAINT fk_notes_users
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+  -- Deleting a user automatically removes all of their notes.
+  DELETE FROM users WHERE id = 1;
+  ```
+
+> **Takeaway:** Database indexes and foreign key constraints enforce business rules and relational integrity directly at the storage level.
