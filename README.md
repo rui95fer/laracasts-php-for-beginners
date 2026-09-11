@@ -993,3 +993,94 @@
   ```
 
 > **Takeaway:** A small `Database` abstraction centralizes connection and query setup while letting the caller choose the SQL and result shape.
+
+## Episode 19 - Environments and Configuration Flexibility
+
+- **Pass the database username, password, and options separately from the PDO DSN so each part can change independently.**
+  ```php
+  $pdo = new PDO(
+      $dsn,
+      'root',
+      '',
+      [
+          PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+      ]
+  );
+  ```
+
+- **Use `ClassName::CONSTANT` to access a class constant; constants provide readable names for values that do not change.**
+  ```php
+  PDO::ATTR_DEFAULT_FETCH_MODE;
+  PDO::FETCH_ASSOC;
+  ```
+
+- **Configure the default fetch mode once on PDO so callers do not repeat `PDO::FETCH_ASSOC` for every result.**
+  ```php
+  // Before
+  $posts = $db->query('SELECT * FROM posts')
+      ->fetchAll(PDO::FETCH_ASSOC);
+
+  // After
+  $posts = $db->query('SELECT * FROM posts')
+      ->fetchAll();
+  ```
+
+- **Move environment-dependent connection values into a configuration array instead of hard-coding them inside `Database`.**
+  ```php
+  $config = [
+      'host' => 'localhost',
+      'port' => 3306,
+      'database' => 'myapp',
+      'charset' => 'utf8mb4',
+  ];
+  ```
+
+- **Use `http_build_query()` to assemble the variable portion of a DSN while keeping the `mysql:` driver prefix explicit.**
+  ```php
+  $dsn = 'mysql:' . http_build_query([
+      'host' => $config['host'],
+      'port' => $config['port'],
+      'dbname' => $config['database'],
+      'charset' => $config['charset'],
+  ], '', ';');
+  ```
+
+- **Accept the configuration and credentials in `Database` so the class can connect to different environments without changing its source code.**
+  ```php
+  class Database
+  {
+      public function __construct($config, $username = 'root', $password = '')
+      {
+          $dsn = 'mysql:' . http_build_query([
+              'host' => $config['host'],
+              'port' => $config['port'],
+              'dbname' => $config['database'],
+              'charset' => $config['charset'],
+          ], '', ';');
+
+          $this->connection = new PDO($dsn, $username, $password, [
+              PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+          ]);
+      }
+  }
+  ```
+
+- **Return configuration from a regular PHP file and capture the returned value when requiring it, allowing local and production files to provide different values.**
+  ```php
+  // config.php
+  <?php
+  return [
+      'database' => [
+          'host' => 'localhost',
+          'port' => 3306,
+          'database' => 'myapp',
+          'charset' => 'utf8mb4',
+      ],
+  ];
+
+  // index.php
+  $config = require 'config.php';
+  $db = new Database($config['database']);
+  ```
+
+> **Takeaway:** Push environment-specific values upward into configuration so database classes remain reusable and application settings have one central home.
