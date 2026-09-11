@@ -1084,3 +1084,53 @@
   ```
 
 > **Takeaway:** Push environment-specific values upward into configuration so database classes remain reusable and application settings have one central home.
+
+## Episode 20 - SQL Injection Vulnerabilities Explained
+
+- **Treat every query-string or form value as untrusted input because it can change the meaning of a SQL query.**
+  ```php
+  $id = $_GET['id'];
+  ```
+
+- **An `OR` clause broadens a `WHERE` condition and can return records beyond the intended match.**
+  ```sql
+  SELECT * FROM users WHERE id = 2 OR admin = 1;
+  ```
+
+- **Never inline user input into SQL because an attacker can add SQL syntax to the query.**
+  ```php
+  // Unsafe
+  $query = "SELECT * FROM posts WHERE id = {$_GET['id']}";
+  ```
+
+- **An injected value can append an unintended destructive statement such as dropping a table.**
+  ```text
+  /note?id=1; DROP TABLE users;
+  ```
+
+- **Use a placeholder in the SQL and bind the user value when executing the prepared statement.**
+  ```php
+  $post = $db->query('SELECT * FROM posts WHERE id = ?', [
+      $_GET['id'],
+  ])->fetch();
+  ```
+
+- **Let `Database::query()` accept a parameter array and pass it to `execute()` so callers consistently use bound parameters.**
+  ```php
+  public function query($query, $params = [])
+  {
+      $statement = $this->connection->prepare($query);
+      $statement->execute($params);
+
+      return $statement;
+  }
+  ```
+
+- **Prepared statements keep SQL and values separate, so injection text is treated as data instead of executable SQL.**
+  ```text
+  SQL:    SELECT * FROM posts WHERE id = ?
+  Params: ["1; DROP TABLE users;"]
+  Result: users table remains intact
+  ```
+
+> **Takeaway:** Never inline user input into SQL; use prepared statements with bound parameters to keep malicious text from becoming executable SQL.
