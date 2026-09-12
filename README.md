@@ -1249,3 +1249,55 @@
   ```
 
 > **Takeaway:** MVC connects clean URLs, controller-level data preparation, and views that render either a collection of notes or one note.
+
+## Episode 23 - Introduction to Authorization
+
+- **Authorization decides whether the current user may access a resource; until authentication is introduced, use a temporary ID to represent that user.**
+  ```php
+  $currentUserId = 1; // Temporary stand-in for the authenticated user.
+  ```
+
+- **Filtering a detail query by both owner and ID can block unauthorized access, but it makes a missing note indistinguishable from an unauthorized one.**
+  ```sql
+  -- First attempt: both cases return no row.
+  SELECT * FROM notes WHERE user_id = ? AND id = ?;
+  ```
+
+- **Fetch the note by ID before checking ownership when the response should distinguish not found from forbidden.**
+  ```php
+  $note = $db->query(
+      'SELECT * FROM notes WHERE id = ?',
+      [$_GET['id']]
+  )->fetch();
+  ```
+
+- **Return `404` when the note does not exist and `403` when it exists but belongs to another user.**
+  ```php
+  if (!$note) {
+      abort(Response::NOT_FOUND);
+  }
+
+  if ($note['user_id'] !== $currentUserId) {
+      abort(Response::FORBIDDEN);
+  }
+  ```
+
+- **Create a dedicated `403` view that clearly explains that the user is not authorized to access the page.**
+  ```php
+  <!-- views/403.php -->
+  <h1>Unauthorized</h1>
+  <p>You are not authorized to view this page.</p>
+  ```
+
+- **Replace HTTP status magic numbers with named constants so their meaning is clear wherever they are used.**
+  ```php
+  class Response
+  {
+      const NOT_FOUND = 404;
+      const FORBIDDEN = 403;
+  }
+
+  abort(Response::FORBIDDEN);
+  ```
+
+> **Takeaway:** Find the resource first, then authorize ownership, using `404` for absence and `403` for access denial.
