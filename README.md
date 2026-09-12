@@ -1182,3 +1182,70 @@
   ```
 
 > **Takeaway:** Database indexes and foreign key constraints enforce business rules and relational integrity directly at the storage level.
+
+## Episode 22 - Render the Notes and Note Page
+
+- **Filter notes by their owner's `user_id` so the query returns only that user's records.**
+  ```sql
+  SELECT * FROM notes WHERE user_id = 1;
+  -- Change 1 to 2 to select another user's notes.
+  ```
+
+- **A request flows from route to controller to view: the route selects the controller, the controller prepares data, and the view renders it.**
+  ```text
+  GET /notes
+      -> router -> notes controller -> notes view
+  ```
+
+- **Register the notes endpoint and add a navigation link so users can reach the page.**
+  ```php
+  // routes.php
+  $router->get('/notes', 'notes.php');
+
+  // views/partials/nav.php
+  <a href="/notes">Notes</a>
+  ```
+
+- **Create shared dependencies before dispatching requests so a controller can use the database connection.**
+  ```php
+  $db = new Database($config['database']);
+  require 'router.php';
+  ```
+
+- **Let the controller fetch the relevant notes and require the view that will present them.**
+  ```php
+  $notes = $db->query(
+      'SELECT * FROM notes WHERE user_id = 1'
+  )->fetchAll();
+
+  require 'notes.view.php';
+  ```
+
+- **Loop over the notes in the view and build each detail link from that note's ID.**
+  ```php
+  <ul>
+      <?php foreach ($notes as $note): ?>
+          <li>
+              <a href="/note?id=<?= $note['id'] ?>">
+                  <?= $note['body'] ?>
+              </a>
+          </li>
+      <?php endforeach; ?>
+  </ul>
+  ```
+
+- **Read the query-string ID, bind it to the SQL query, and fetch one record for the single-note page.**
+  ```php
+  $note = $db->query(
+      'SELECT * FROM notes WHERE id = ?',
+      [$_GET['id']]
+  )->fetch();
+  ```
+
+- **Give the individual note its own view and provide a link back to the notes list.**
+  ```php
+  <p><?= $note['body'] ?></p>
+  <a href="/notes">Go back</a>
+  ```
+
+> **Takeaway:** MVC connects clean URLs, controller-level data preparation, and views that render either a collection of notes or one note.
