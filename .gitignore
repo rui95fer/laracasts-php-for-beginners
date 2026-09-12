@@ -18,6 +18,7 @@ vendor/
 
 # Ignore Herd and other PHP local dev tools
 herd/
+.codex/
 
 # Ignore node_modules (if using Node tools)
 node_modules/
