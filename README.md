@@ -1573,3 +1573,84 @@
   ```
 
 > **Takeaway:** Browser validation helps users, but server-side validation is the authority that prevents invalid data from reaching the database.
+
+## Episode 28 - Extract a Simple Validator Class
+
+- **Move validation rules into a dedicated `Validator` class so controllers can reuse them instead of repeating input checks.**
+  ```php
+  // Core/Validator.php
+  class Validator
+  {
+      public function string($value)
+      {
+          return strlen($value) >= 1;
+      }
+  }
+
+  $validator = new Validator();
+  $validator->string($body);
+  ```
+
+- **Trim a value before measuring it so whitespace-only input fails the minimum-length rule.**
+  ```php
+  public function string($value)
+  {
+      $value = trim($value);
+
+      return strlen($value) >= 1;
+  }
+  ```
+
+- **Accept minimum and maximum lengths in one string rule, defaulting to one character and no practical upper bound.**
+  ```php
+  public function string($value, $min = 1, $max = INF)
+  {
+      $value = trim($value);
+
+      return strlen($value) >= $min && strlen($value) <= $max;
+  }
+
+  $validator->string($body, 1, 1000);
+  ```
+
+- **A pure function depends only on its arguments, so it can be declared `static` and called without creating a class instance.**
+  ```php
+  public static function string($value, $min = 1, $max = INF): bool
+  {
+      $value = trim($value);
+
+      return strlen($value) >= $min && strlen($value) <= $max;
+  }
+
+  Validator::string($body, 1, 1000);
+  ```
+
+- **Use `filter_var()` with `FILTER_VALIDATE_EMAIL` to validate an email address's format without checking whether the address exists.**
+  ```php
+  public static function email($value): bool
+  {
+      return filter_var($value, FILTER_VALIDATE_EMAIL);
+  }
+
+  if (!Validator::email($email)) {
+      $errors['email'] = 'A valid email address is required.';
+  }
+  ```
+
+- **Keep validation before the database write; extracting the rules changes the structure of the code without changing its behavior.**
+  ```php
+  $errors = [];
+
+  if (!Validator::string($_POST['body'], 1, 1000)) {
+      $errors['body'] = 'Body must be between 1 and 1000 characters.';
+  }
+
+  if (empty($errors)) {
+      $db->query('INSERT INTO notes (body, user_id) VALUES (:body, :user_id)', [
+          'body' => $_POST['body'],
+          'user_id' => 1,
+      ]);
+  }
+  ```
+
+> **Takeaway:** Small, pure validation methods keep controllers focused while making common input rules reusable across the application.
