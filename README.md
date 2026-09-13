@@ -1479,3 +1479,48 @@
   ```
 
 > **Takeaway:** Forms are request boundaries: name their controls, use GET for reads, use POST for state changes, and route each submission to the right handler.
+
+## Episode 26 - Always Escape Untrusted Input
+
+- **Inspect `$_POST` after a form submission to see the named fields and values sent by the browser.**
+  ```php
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      var_dump($_POST);
+  }
+  ```
+
+- **Insert submitted note data with a prepared statement so user values cannot change the SQL syntax.**
+  ```php
+  $db->query(
+      'INSERT INTO notes (body, user_id) VALUES (:body, :user_id)',
+      [
+          'body' => $_POST['body'],
+          'user_id' => 1, // Temporary until authentication is added.
+      ]
+  );
+  ```
+
+- **Prepared statements protect the database query, but stored user input is still unsafe to render as HTML.**
+  ```text
+  User input: <script>alert('XSS')</script>
+  ```
+
+- **Escape untrusted text with `htmlspecialchars()` everywhere it is rendered in HTML so tags become text instead of executable markup.**
+  ```php
+  // Notes index
+  <?= htmlspecialchars($note['body']) ?>
+
+  // Individual note page
+  <p><?= htmlspecialchars($note['body']) ?></p>
+  ```
+
+- **Validate submitted values before inserting them so required data meets application rules such as a non-empty, bounded note body.**
+  ```php
+  $body = $_POST['body'] ?? '';
+
+  if (!Validator::string($body, 1, 1000)) {
+      $errors['body'] = 'Body must be between 1 and 1000 characters.';
+  }
+  ```
+
+> **Takeaway:** Treat submitted data as untrusted: use prepared statements for SQL, validate it against application rules, and escape it whenever it enters HTML.
