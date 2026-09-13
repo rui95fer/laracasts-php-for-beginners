@@ -1524,3 +1524,52 @@
   ```
 
 > **Takeaway:** Treat submitted data as untrusted: use prepared statements for SQL, validate it against application rules, and escape it whenever it enters HTML.
+
+## Episode 27 - Intro to Form Validation
+
+- **Client-side validation improves feedback, but it cannot protect the application because users can submit requests without the browser form.**
+  ```bash
+  curl -X POST http://localhost:8888/notes -d "body="
+  ```
+
+- **Collect validation errors before writing to the database, and only run the insert when the error collection is empty.**
+  ```php
+  $body = $_POST['body'] ?? '';
+  $errors = [];
+
+  if (strlen($body) === 0) {
+      $errors['body'] = 'A body is required.';
+  }
+
+  if (empty($errors)) {
+      $db->query(
+          'INSERT INTO notes (body, user_id) VALUES (:body, :user_id)',
+          ['body' => $body, 'user_id' => 1]
+      );
+  } else {
+      return view('notes/create.view.php', [
+          'errors' => $errors,
+      ]);
+  }
+  ```
+
+- **Display a field-specific validation message only when that field has an error, so users know what to fix.**
+  ```php
+  <?php if (isset($errors['body'])): ?>
+      <p class="text-red-600"><?= htmlspecialchars($errors['body']) ?></p>
+  <?php endif; ?>
+  ```
+
+- **Apply a maximum length rule when unbounded input would be too large for the application, such as limiting a note body to 1000 characters.**
+  ```php
+  if (strlen($body) > 1000) {
+      $errors['body'] = 'Body cannot be more than 1000 characters.';
+  }
+  ```
+
+- **Preserve submitted input after validation fails, and use the null coalescing operator so the initial GET request does not trigger an undefined-key warning.**
+  ```php
+  <textarea name="body"><?= htmlspecialchars($_POST['body'] ?? '') ?></textarea>
+  ```
+
+> **Takeaway:** Browser validation helps users, but server-side validation is the authority that prevents invalid data from reaching the database.
