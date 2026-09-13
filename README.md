@@ -1301,3 +1301,99 @@
   ```
 
 > **Takeaway:** Find the resource first, then authorize ownership, using `404` for absence and `403` for access denial.
+
+## Episode 24 - Programming is Rewriting
+
+- **Refactoring improves a working feature through small changes while preserving its externally visible behavior.**
+  ```php
+  // Before
+  $note = $db->query(
+      'SELECT * FROM notes WHERE id = :id',
+      ['id' => $_GET['id']]
+  )->fetch();
+
+  if (!$note) {
+      abort(Response::NOT_FOUND);
+  }
+
+  if ($note['user_id'] !== $currentUserId) {
+      abort(Response::FORBIDDEN);
+  }
+
+  // After
+  $note = $db->query(
+      'SELECT * FROM notes WHERE id = :id',
+      ['id' => $_GET['id']]
+  )->findOrFail();
+
+  authorize($note['user_id'] === $currentUserId);
+  ```
+
+- **Store the prepared statement on the `Database` object so other methods can use the result of the latest query.**
+  ```php
+  public ?PDOStatement $statement = null;
+
+  $this->statement = $this->connection->prepare($query);
+  $this->statement->execute($params);
+  ```
+
+- **Return `$this` from `query()` when the database class should provide its own fluent helper methods.**
+  ```php
+  public function query($query, $params = []): Database
+  {
+      $this->statement = $this->connection->prepare($query);
+      $this->statement->execute($params);
+
+      return $this;
+  }
+  ```
+
+- **Wrap `PDOStatement::fetch()` in an application-owned `find()` method so callers use language that describes the operation.**
+  ```php
+  public function find()
+  {
+      return $this->statement->fetch();
+  }
+
+  // The caller now uses the database API instead of PDO directly.
+  $note = $db->query($query, $params)->find();
+  ```
+
+- **Use `findOrFail()` to centralize the common not-found check and return a `404` when no record exists.**
+  ```php
+  public function findOrFail(): ?array
+  {
+      $result = $this->find();
+
+      if (!$result) {
+          abort(Response::NOT_FOUND);
+      }
+
+      return $result;
+  }
+  ```
+
+- **Use an `authorize()` helper to express ownership checks directly and abort with `403` when the condition is false.**
+  ```php
+  function authorize($condition, $status = Response::FORBIDDEN): bool
+  {
+      if (!$condition) {
+          abort($status);
+      }
+
+      return true;
+  }
+
+  authorize($note['user_id'] === $currentUserId);
+  ```
+
+- **Expose a concise `get()` method for fetching all rows so controllers do not depend on PDO's `fetchAll()` name.**
+  ```php
+  // Before
+  $notes = $db->query('SELECT * FROM notes WHERE user_id = 1')->fetchAll();
+
+  // After
+  $notes = $db->query('SELECT * FROM notes WHERE user_id = 1')->get();
+  ```
+
+> **Takeaway:** Programming is rewriting: once code works, keep refining it into meaningful, reusable abstractions without changing its behavior.
