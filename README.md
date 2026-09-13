@@ -1397,3 +1397,85 @@
   ```
 
 > **Takeaway:** Programming is rewriting: once code works, keep refining it into meaningful, reusable abstractions without changing its behavior.
+
+## Episode 25 - Intro to Forms and Request Methods
+
+- **Link to `/notes/create` from the notes index so users can reach the page for creating a note.**
+  ```php
+  <p class="mt-4">
+      <a href="/notes/create" class="text-blue-500 hover:underline">Create a new note</a>
+  </p>
+  ```
+
+- **Keep route declarations in `routes.php` so the entry point does not become a list of route details.**
+  ```php
+  // routes.php
+  $router->get('/notes/create', 'notes/create.php');
+  $router->post('/notes', 'notes/store.php');
+
+  // public/index.php
+  $router = new Router();
+  require base_path('routes.php');
+  ```
+
+- **Use resource-oriented URIs so the path communicates whether a request lists notes, shows one note, or displays the create form.**
+  ```text
+  GET /notes        -> list notes
+  GET /note?id=1    -> show note 1 in the simple router
+  GET /notes/create -> display the create form
+  ```
+
+- **Give every form control a `name` because only named controls are included in submitted form data.**
+  ```php
+  <textarea id="body" name="body"></textarea>
+  ```
+
+- **Point a label's `for` attribute at the control's `id`, not its `name`, to associate the label with the correct field.**
+  ```php
+  <label for="body">Body</label>
+  <textarea id="body" name="body"></textarea>
+  ```
+
+- **A form uses GET by default, placing named fields in the query string; use it for safe, repeatable reads.**
+  ```text
+  <form action="/notes/create">
+      <textarea name="body"></textarea>
+  </form>
+
+  GET /notes/create?body=Some+new+note
+  ```
+
+- **Use POST for actions that create or change data because repeating a POST submission can create multiple records.**
+  ```php
+  <form method="POST">
+      <textarea id="body" name="body"></textarea>
+      <button type="submit">Create Note</button>
+  </form>
+  ```
+
+- **Use `action` to send a form to the endpoint that handles it; without `action`, the form submits to the current URL.**
+  ```php
+  <form method="POST" action="/notes">
+      <textarea id="body" name="body"></textarea>
+      <button type="submit">Create Note</button>
+  </form>
+  ```
+
+- **Inspect `$_SERVER['REQUEST_METHOD']` to distinguish the initial GET request from a POST form submission.**
+  ```php
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      echo 'You submitted the form.';
+  }
+  ```
+
+- **Read submitted values from the `$_POST` superglobal using the control's `name` as the key.**
+  ```php
+  $body = $_POST['body'] ?? '';
+  ```
+
+- **Enable Tailwind's `forms` plugin through the CDN when the default controls need the course's styled appearance.**
+  ```html
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  ```
+
+> **Takeaway:** Forms are request boundaries: name their controls, use GET for reads, use POST for state changes, and route each submission to the right handler.
