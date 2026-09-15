@@ -1791,3 +1791,78 @@
   ```
 
 > **Takeaway:** A protected public entry point, centralized paths, reusable view loading, and lazy class loading keep a PHP project safer and easier to organize.
+
+## Episode 31 - Namespacing: What, Why, How?
+
+- **When a shared file moves under `Core/`, resolve related files from the project root so its working directory no longer matters.**
+  ```php
+  // Core/Router.php
+  require base_path('routes.php');
+
+  return require base_path("Http/controllers/{$route['controller']}");
+  ```
+
+- **A namespace groups classes and should mirror the directory tree, so `Core/Database.php` defines `Core\Database`.**
+  ```php
+  // Core/Database.php
+  <?php
+
+  namespace Core;
+
+  class Database
+  {
+      // ...
+  }
+  ```
+
+- **Use a fully qualified class name or import it once with `use`; the import keeps repeated references readable.**
+  ```php
+  // Http/controllers/notes/index.php
+  use Core\Database;
+
+  // With the import:
+  $db = new Database($config['database']);
+
+  // Without the import:
+  $db = new \Core\Database($config['database']);
+  ```
+
+- **A namespace-aware autoloader converts the namespace separator to the operating system's directory separator before building the file path.**
+  ```php
+  spl_autoload_register(function ($class) {
+      $class = str_replace('\\', DIRECTORY_SEPARATOR, $class);
+
+      require base_path("{$class}.php");
+  });
+
+  // Core\Database becomes Core/Database.php.
+  ```
+
+- **Unqualified class names inside a namespace are resolved inside that namespace, so import global PHP classes such as `PDO` or prefix them with `\`.**
+  ```php
+  namespace Core;
+
+  use PDO;
+  use PDOStatement;
+
+  class Database
+  {
+      public PDO $connection;
+      public ?PDOStatement $statement = null;
+  }
+
+  // Alternative: new \PDO(...)
+  ```
+
+- **Apply the namespace consistently to Core classes and import those classes in application files; global helper functions can remain global while importing their namespaced dependencies.**
+  ```php
+  // Http/controllers/notes/store.php
+  use Core\App;
+  use Core\Database;
+  use Core\Validator;
+
+  $db = App::resolve(Database::class);
+  Validator::string($_POST['body'], 1, 1000);
+  ```
+
+> **Takeaway:** Namespaces give classes names that match their structure; the autoloader translates those names into paths, and `use` statements keep references clear.
