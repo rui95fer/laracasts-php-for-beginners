@@ -1654,3 +1654,63 @@
   ```
 
 > **Takeaway:** Small, pure validation methods keep controllers focused while making common input rules reusable across the application.
+
+## Episode 29 - Resourceful Naming Conventions
+
+- **Group controllers and views by resource so flat directories remain easy to navigate as the application grows.**
+  ```text
+  # Before
+  Http/controllers/
+    noteCreate.php
+    noteIndex.php
+    noteShow.php
+  views/
+    noteCreate.view.php
+    noteIndex.view.php
+    noteShow.view.php
+
+  # After
+  Http/controllers/notes/
+    create.php
+    index.php
+    show.php
+  views/notes/
+    create.view.php
+    index.view.php
+    show.view.php
+  ```
+
+- **Let the resource directory provide context, then use conventional action names such as `index`, `show`, and `create`.**
+  ```text
+  notes/index.php  -> list notes
+  notes/show.php   -> show one note
+  notes/create.php -> display the create form
+  ```
+
+- **Update route targets after moving and renaming controller files.**
+  ```php
+  $router->get('/notes', 'notes/index.php');
+  $router->get('/note', 'notes/show.php');
+  $router->get('/notes/create', 'notes/create.php');
+  ```
+
+- **Use the same resource-and-action convention for view filenames so controllers and templates are easy to find together.**
+  ```php
+  view('notes/index.view.php', ['notes' => $notes]);
+  view('notes/show.view.php', ['note' => $note]);
+  view('notes/create.view.php', ['errors' => $errors]);
+  ```
+
+- **Use a project-rooted path for shared partials after moving a view into a resource subdirectory.**
+  ```php
+  <?php require base_path('views/partials/nav.php') ?>
+  ```
+
+- **Apply the same convention to every resource so a future user form follows the same predictable path.**
+  ```text
+  Http/controllers/users/create.php
+  views/users/create.view.php
+  GET /users/create
+  ```
+
+> **Takeaway:** Resource-based folders and consistent action names make a growing application easier to navigate, maintain, and work on as a team.
