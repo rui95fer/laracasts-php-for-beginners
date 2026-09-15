@@ -1714,3 +1714,80 @@
   ```
 
 > **Takeaway:** Resource-based folders and consistent action names make a growing application easier to navigate, maintain, and work on as a team.
+
+## Episode 30 - PHP Autoloading and Extraction
+
+- **Set the web server's document root to `public/` so only the front controller and public assets can be requested directly.**
+  ```bash
+  php -S localhost:8888 -t public
+  # config.php and other application files remain outside the document root.
+  ```
+
+- **Build an absolute project root from the front controller's location, then load shared helpers before using them.**
+  ```php
+  // public/index.php
+  const BASE_PATH = __DIR__ . '/../';
+
+  require BASE_PATH . 'Core/functions.php';
+  ```
+
+- **Use `base_path()` to resolve project-relative files so moving the entry point does not require rewriting every path.**
+  ```php
+  function base_path($path): string
+  {
+      return BASE_PATH . $path;
+  }
+
+  // Before: require 'routes.php';
+  require base_path('routes.php');
+  ```
+
+- **Hide template paths behind a `view()` helper so controllers can request a view through a small, consistent interface.**
+  ```php
+  function view($path, $attributes = [])
+  {
+      require base_path('views/' . $path);
+  }
+
+  view('about.view.php');
+  ```
+
+- **Pass view data as an associative array and use `extract()` to make each key available as a template variable.**
+  ```php
+  function view($path, $attributes = [])
+  {
+      extract($attributes);
+
+      require base_path('views/' . $path);
+  }
+
+  view('notes/index.view.php', [
+      'heading' => 'My Notes',
+      'notes' => $notes,
+  ]);
+  // The view can now use $heading and $notes.
+  ```
+
+- **Register an autoloader so PHP loads a class file only when the class is first needed, replacing repeated manual `require` statements.**
+  ```php
+  spl_autoload_register(function ($class) {
+      require base_path("Core/{$class}.php");
+  });
+
+  $db = new Database($config['database']); // Loads Core/Database.php on demand.
+  ```
+
+- **Extract generic infrastructure into `Core/` and keep application-specific controllers and views in their own directories.**
+  ```text
+  Core/
+    Database.php
+    Response.php
+    Router.php
+    Validator.php
+    functions.php
+  Http/controllers/
+  views/
+  public/index.php
+  ```
+
+> **Takeaway:** A protected public entry point, centralized paths, reusable view loading, and lazy class loading keep a PHP project safer and easier to organize.
