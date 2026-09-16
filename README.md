@@ -2114,3 +2114,115 @@
   ```
 
 > **Takeaway:** One request type per controller action keeps controllers small, reduces indentation, and makes the application's resource conventions easier to understand.
+
+## Episode 35 - Make Your First Service Container
+
+- **Frameworks provide common infrastructure such as routers, validators, database wrappers, and service containers; building a small version helps explain what a framework does for you.**
+  ```text
+  Application code -> framework services
+  Router, validator, database, container, ...
+  ```
+
+- **Repeatedly constructing `Database` is noisy because every call must repeat the configuration required by its constructor.**
+  ```php
+  // Before: every caller repeats the setup.
+  $config = require base_path('config.php');
+  $db = new Database($config['database']);
+  ```
+
+- **A service container stores a service key and a resolver function, so construction logic can be defined once and reused.**
+  ```php
+  class Container
+  {
+      protected array $bindings = [];
+
+      public function bind($key, $resolver): void
+      {
+          $this->bindings[$key] = $resolver;
+      }
+  }
+  ```
+
+- **`resolve()` looks up a binding, calls its resolver when it is callable, and returns the resulting service; an unknown key throws an exception.**
+  ```php
+  public function resolve($key)
+  {
+      if (!isset($this->bindings[$key])) {
+          throw new Exception("No binding found for $key");
+      }
+
+      $resolver = $this->bindings[$key];
+
+      if (is_callable($resolver)) {
+          return $resolver();
+      }
+
+      return $resolver;
+  }
+  ```
+
+- **Build the container during bootstrapping, bind the database using `Database::class` as its key, and register the container with `App`.**
+  ```php
+  use Core\App;
+  use Core\Container;
+  use Core\Database;
+
+  $container = new Container();
+
+  $container->bind(Database::class, function () {
+      $config = require base_path('config.php');
+
+      return new Database($config['database']);
+  });
+
+  App::setContainer($container);
+  ```
+
+- **The static container stored by `App` provides singleton-style access to the same container throughout the application.**
+  ```php
+  class App
+  {
+      protected static $container;
+
+      public static function setContainer($container): void
+      {
+          static::$container = $container;
+      }
+
+      public static function getContainer()
+      {
+          return static::$container;
+      }
+  }
+  ```
+
+- **Add forwarding methods to `App` when you want a shorter API; these methods delegate to the container instead of duplicating its logic.**
+  ```php
+  public static function bind($key, $resolver): void
+  {
+      static::getContainer()->bind($key, $resolver);
+  }
+
+  public static function resolve($key)
+  {
+      return static::getContainer()->resolve($key);
+  }
+  ```
+
+- **Replace manual database setup in controllers with a lookup from the container.**
+  ```php
+  // Before
+  $config = require base_path('config.php');
+  $db = new Database($config['database']);
+
+  // After
+  $db = App::resolve(Database::class);
+  ```
+
+- **Automatic dependency resolution is a possible extension where the container inspects constructor dependencies and builds the dependency graph recursively; this episode uses explicit bindings.**
+  ```text
+  Service A -> Service B -> Database
+  The container could resolve each dependency in order.
+  ```
+
+> **Takeaway:** A service container centralizes object construction so the rest of the application can request ready-to-use services through one consistent API.
