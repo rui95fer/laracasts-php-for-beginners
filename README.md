@@ -1918,3 +1918,109 @@
   ```
 
 > **Takeaway:** Request methods describe intent: use GET to read, use a non-idempotent method to mutate, protect destructive actions with authorization, and keep temporary multi-purpose controllers on a path toward separate resource actions.
+
+## Episode 33 - Build a Better Router
+
+- **A route should match both the URI and the HTTP method; URI-only routing forces one controller to handle unrelated actions with extra conditionals.**
+  ```php
+  // Before: one controller handles both behaviors.
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      // Delete the note.
+  } else {
+      // Show the note.
+  }
+  ```
+
+- **Give each request method its own route so the controller can focus on one action.**
+  ```php
+  // routes.php
+  $router->get('/note', 'notes/show.php');
+  $router->delete('/note', 'notes/destroy.php');
+  ```
+
+- **A router object provides readable methods for the common request types: `get`, `post`, `delete`, `patch`, and `put`; `PATCH` and `PUT` can both represent updates while the distinction is deferred.**
+  ```php
+  $router->get('/', 'index.php');
+  $router->post('/notes', 'notes/store.php');
+  $router->delete('/note', 'notes/destroy.php');
+  $router->patch('/note', 'notes/update.php');
+  $router->put('/note', 'notes/update.php');
+  ```
+
+- **Store route definitions in a protected `$routes` array so callers use the router's methods instead of reaching into its internal state.**
+  ```php
+  class Router
+  {
+      protected array $routes = [];
+  }
+  ```
+
+- **Centralize registration in `add()`; each request-specific method supplies the method name and returns the router instance for future chaining or extensions.**
+  ```php
+  public function add($method, $uri, $controller)
+  {
+      $this->routes[] = [
+          'method' => $method,
+          'uri' => $uri,
+          'controller' => $controller
+      ];
+
+      return $this;
+  }
+
+  public function delete($uri, $controller)
+  {
+      return $this->add('DELETE', $uri, $controller);
+  }
+  ```
+
+- **Create the router before requiring `routes.php`; the required file can then use the existing `$router` variable to register every route.**
+  ```php
+  // public/index.php
+  $router = new Router();
+  require base_path('routes.php');
+  ```
+
+- **When dispatching, require a matching URI and method, normalize the method with `strtoupper()`, and abort with a 404 response when no route matches.**
+  ```php
+  public function route($uri, $method)
+  {
+      foreach ($this->routes as $route) {
+          if ($route['uri'] === $uri
+              && $route['method'] === strtoupper($method)) {
+              return require base_path("Http/controllers/{$route['controller']}");
+          }
+      }
+
+      $this->abort();
+  }
+  ```
+
+- **HTML forms support only GET and POST, so add a hidden `_method` field when a POST form should represent DELETE, PUT, or PATCH.**
+  ```html
+  <form method="POST" action="/note">
+      <input type="hidden" name="_method" value="DELETE">
+      <button type="submit">Delete</button>
+  </form>
+  ```
+
+- **Prefer the submitted method override and fall back to the server's actual request method with PHP's null-coalescing operator.**
+  ```php
+  $uri = parse_url($_SERVER['REQUEST_URI'])['path'];
+  $method = $_POST['_method'] ?? $_SERVER['REQUEST_METHOD'];
+
+  $router->route($uri, $method);
+  ```
+
+- **Keep a global helper such as `abort()` available when authorization or controllers call it; moving routing into a class does not automatically move application-wide helpers.**
+  ```php
+  // Core/functions.php
+  function abort($code = 404): void
+  {
+      http_response_code($code);
+      require base_path("views/{$code}.php");
+      die();
+  }
+  ```
+
+> **Takeaway:** A better router separates request methods from controller actions, keeps route registration readable, and uses method overriding to give HTML forms RESTful behavior.
