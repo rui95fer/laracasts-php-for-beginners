@@ -1866,3 +1866,55 @@
   ```
 
 > **Takeaway:** Namespaces give classes names that match their structure; the autoloader translates those names into paths, and `use` statements keep references clear.
+
+## Episode 32 - Handle Multiple Request Methods From a Controller Action?
+
+- **Use a form for destructive actions such as deleting a note; an anchor tag sends a GET request, which should be reserved for safe reads.**
+  ```html
+  <form method="POST" class="mt-4">
+      <input type="hidden" name="id" value="<?= htmlspecialchars($note['id']) ?>">
+      <button type="submit" class="text-red-500">Delete</button>
+  </form>
+  ```
+
+- **A controller can inspect `$_SERVER['REQUEST_METHOD']` to distinguish the initial page request from a submitted form, although combining both behaviors creates extra branching.**
+  ```php
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      // Delete the note.
+  } else {
+      // Display the note.
+  }
+  ```
+
+- **RESTful routing expresses deletion as a `DELETE` request to the resource's URI instead of inventing an action-specific path such as `/note/delete`.**
+  ```text
+  GET    /note?id=17  -> show note 17
+  DELETE /note?id=17  -> delete note 17
+  ```
+
+- **Native HTML forms support only GET and POST, so use POST as a temporary compatibility step until the application adds a way to represent DELETE, PUT, or PATCH submissions.**
+  ```text
+  Desired request: DELETE /note?id=17
+  Native form:    POST /note with the note ID in the form body
+  ```
+
+- **Treat the submitted ID as untrusted: reload the note, authorize its owner, and only then execute a parameterized delete query.**
+  ```php
+  $note = $db->query('SELECT * FROM notes WHERE id = :id', [
+      'id' => $_POST['id'],
+  ])->findOrFail();
+
+  authorize($note['user_id'] === $currentUserId);
+
+  $db->query('DELETE FROM notes WHERE id = :id', [
+      'id' => $_POST['id'],
+  ]);
+  ```
+
+- **Redirect after a successful mutation so refreshing the destination does not submit the delete form again.**
+  ```php
+  header('Location: /notes');
+  exit;
+  ```
+
+> **Takeaway:** Request methods describe intent: use GET to read, use a non-idempotent method to mutate, protect destructive actions with authorization, and keep temporary multi-purpose controllers on a path toward separate resource actions.
