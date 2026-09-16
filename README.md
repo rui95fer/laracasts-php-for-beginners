@@ -2226,3 +2226,110 @@
   ```
 
 > **Takeaway:** A service container centralizes object construction so the rest of the application can request ready-to-use services through one consistent API.
+
+## Episode 36 - Updating With PATCH Requests
+
+- **Use separate resource actions for displaying an edit form and processing its update; `edit` shows the form, while `update` changes the stored record.**
+  ```php
+  $router->get('/note/edit', 'notes/edit.php');
+  $router->patch('/note', 'notes/update.php');
+  ```
+
+- **Include the note identifier in the edit link so the edit controller can load the specific record instead of showing an empty form.**
+  ```php
+  <a href="/note/edit?id=<?= htmlspecialchars($note['id']) ?>">
+      Edit
+  </a>
+  ```
+
+- **The edit action should reload the note, return a 404 when it does not exist, authorize its owner, and pass the note to the view.**
+  ```php
+  $note = $db->query('SELECT * FROM notes WHERE id = :id', [
+      'id' => $_GET['id'],
+  ])->findOrFail();
+
+  authorize($note['user_id'] === $currentUserId);
+
+  view('notes/edit.view.php', [
+      'heading' => 'Edit Note',
+      'errors' => [],
+      'note' => $note,
+  ]);
+  ```
+
+- **Reuse the create form for editing by pre-filling the textarea with the saved body, including the ID as hidden form data, and offering a cancel link.**
+  ```html
+  <form method="POST" action="/note">
+      <input type="hidden" name="_method" value="PATCH">
+      <input type="hidden" name="id" value="<?= htmlspecialchars($note['id']) ?>">
+
+      <textarea name="body"><?= htmlspecialchars($note['body'] ?? '') ?></textarea>
+
+      <a href="/notes">Cancel</a>
+      <button type="submit">Update Note</button>
+  </form>
+  ```
+
+- **Because native HTML forms support only `GET` and `POST`, use a hidden `_method` field to tell the router that a POST form should be treated as a `PATCH` request.**
+  ```php
+  $method = $_POST['_method'] ?? $_SERVER['REQUEST_METHOD'];
+
+  // The router receives PATCH even though the browser submitted POST.
+  $router->route('/note', $method);
+  ```
+
+- **Process an update in a predictable order: find the note, authorize the user, validate the submitted body, then write to the database only when there are no errors.**
+  ```php
+  $note = $db->query('SELECT * FROM notes WHERE id = :id', [
+      'id' => $_POST['id'],
+  ])->findOrFail();
+
+  authorize($note['user_id'] === $currentUserId);
+
+  $errors = [];
+
+  if (!Validator::string($_POST['body'], 1, 1000)) {
+      $errors['body'] = 'A note must be between 1 and 1000 characters.';
+  }
+
+  if (count($errors)) {
+      view('notes/edit.view.php', [
+          'heading' => 'Edit Note',
+          'errors' => $errors,
+          'note' => $note,
+      ]);
+  }
+  ```
+
+- **Use bound parameters for the `UPDATE` query and redirect after success so the saved note is loaded through a fresh request.**
+  ```php
+  $db->query('UPDATE notes SET body = :body WHERE id = :id', [
+      'id' => $_POST['id'],
+      'body' => $_POST['body'],
+  ]);
+
+  header('Location: /notes');
+  exit;
+  ```
+
+- **When validation fails, show the error beside the form field; the episode's simple implementation passes the original database note back, so the invalid submitted text is replaced by the saved text.**
+  ```php
+  <?php if (isset($errors['body'])): ?>
+      <p><?= htmlspecialchars($errors['body']) ?></p>
+  <?php endif; ?>
+  ```
+
+- **Resourceful CRUD conventions give each common operation a predictable action and route, making it easier to find and maintain the code.**
+  ```text
+  index   -> show all notes      -> GET /notes
+  show    -> show one note       -> GET /note?id=17
+  create  -> show create form    -> GET /notes/create
+  store   -> save a new note     -> POST /notes
+  edit    -> show edit form      -> GET /note/edit?id=17
+  update  -> change a note       -> PATCH /note
+  destroy -> delete a note       -> DELETE /note
+
+  CRUD = Create, Read, Update, Delete
+  ```
+
+> **Takeaway:** PATCH-based updates complete the notes CRUD flow while resourceful names make each request's purpose predictable.
