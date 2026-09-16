@@ -2024,3 +2024,93 @@
   ```
 
 > **Takeaway:** A better router separates request methods from controller actions, keeps route registration readable, and uses method overriding to give HTML forms RESTful behavior.
+
+## Episode 34 - One Request, One Controller
+
+- **Once routing distinguishes request methods, give each method its own controller action instead of branching inside one controller.**
+  ```php
+  // Before: one controller handles both behaviors.
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      // Delete the note.
+  } else {
+      // Show the note.
+  }
+
+  // After: each request has a focused action.
+  $router->get('/note', 'notes/show.php');
+  $router->delete('/note', 'notes/destroy.php');
+  ```
+
+- **A dedicated destroy action needs no request-method conditional; it can load the submitted note, authorize its owner, delete it, and redirect.**
+  ```php
+  $note = $db->query('SELECT * FROM notes WHERE id = :id', [
+      'id' => $_POST['id'],
+  ])->findOrFail();
+
+  authorize($note['user_id'] === $currentUserId);
+
+  $db->query('DELETE FROM notes WHERE id = :id', [
+      'id' => $_POST['id'],
+  ]);
+
+  header('Location: /notes');
+  exit;
+  ```
+
+- **Use the correct input source for a method-overridden delete form: the hidden note ID is submitted in `$_POST`, even though the router treats the request as `DELETE`.**
+  ```html
+  <form method="POST" action="/note">
+      <input type="hidden" name="_method" value="DELETE">
+      <input type="hidden" name="id" value="17">
+      <button type="submit">Delete</button>
+  </form>
+  ```
+
+- **Follow the common RESTful convention of using `GET /notes/create` to display the form and `POST /notes` to persist the new note; the action names are conventionally `create` and `store`.**
+  ```php
+  $router->get('/notes/create', 'notes/create.php');
+  $router->post('/notes', 'notes/store.php');
+  ```
+
+- **Keep validation and persistence in the store action, return the form with errors when validation fails, and put the successful insert-and-redirect path after the error check.**
+  ```php
+  $errors = [];
+
+  if (!Validator::string($_POST['body'], 1, 1000)) {
+      $errors['body'] = 'Body must be between 1 and 1000 characters.';
+  }
+
+  if (!empty($errors)) {
+      return view('notes/create.view.php', [
+          'heading' => 'Create Note',
+          'errors' => $errors,
+      ]);
+  }
+
+  $db->query('INSERT INTO notes (body, user_id) VALUES (:body, :user_id)', [
+      'body' => $_POST['body'],
+      'user_id' => 1, // Temporary until authentication is added.
+  ]);
+
+  header('Location: /notes');
+  exit;
+  ```
+
+- **The create action should only prepare and display the form, so it can be a small view call with an initially empty error collection and no database work.**
+  ```php
+  // Http/controllers/notes/create.php
+  view('notes/create.view.php', [
+      'heading' => 'Create Note',
+      'errors' => [],
+  ]);
+  ```
+
+- **A complete notes flow now maps each request to one focused action, making the behavior easy to trace and test.**
+  ```text
+  GET    /notes/create       -> create.php  -> display form
+  POST   /notes              -> store.php   -> insert, redirect to /notes
+  GET    /note?id=17         -> show.php    -> display note
+  POST   /note (_method=DELETE) -> destroy.php -> delete, redirect to /notes
+  ```
+
+> **Takeaway:** One request type per controller action keeps controllers small, reduces indentation, and makes the application's resource conventions easier to understand.
