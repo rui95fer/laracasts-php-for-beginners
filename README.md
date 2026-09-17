@@ -2333,3 +2333,54 @@
   ```
 
 > **Takeaway:** PATCH-based updates complete the notes CRUD flow while resourceful names make each request's purpose predictable.
+
+## Episode 37 - Introducing Session Superglobal
+
+- **`$_SESSION` is a superglobal associative array for storing values that should be available across requests from the same visitor.**
+  ```php
+  $_SESSION['name'] = 'Jeffrey';
+  ```
+
+- **Before reading or writing `$_SESSION`, start the session as early as possible in the request entrypoint.**
+  ```php
+  // public/index.php
+  session_start();
+  ```
+
+- **A value written during one request can be read by another controller or view after the session has started.**
+  ```php
+  // Homepage controller
+  $_SESSION['name'] = 'Jeffrey';
+
+  // About view
+  echo 'Hello, ' . $_SESSION['name'];
+  // Hello, Jeffrey
+  ```
+
+- **Session keys may be missing when a visitor starts on another page or begins a new session, so provide a fallback with the null-coalescing operator.**
+  ```php
+  $name = $_SESSION['name'] ?? 'Guest';
+
+  echo 'Hello, ' . $name;
+  ```
+
+- **With PHP's default file-based session handler, the values are stored on the server while the browser keeps a `PHPSESSID` cookie that identifies the session.**
+  ```text
+  Browser: PHPSESSID=<session-id>
+  Server:  session file containing name and other session values
+  ```
+
+- **Use `php -i` to inspect `session.save_path` and find the directory where PHP stores session files; an empty setting falls back to PHP's temporary directory.**
+  ```bash
+  php -i
+  # Search the output for:
+  session.save_path
+  ```
+
+- **Closing the browser or deleting the `PHPSESSID` cookie usually starts a new session on the next request, so the old session data is no longer available to that browser.**
+  ```text
+  Before: PHPSESSID=abc123
+  After cookie reset: PHPSESSID=xyz789
+  ```
+
+> **Takeaway:** Start the session before using `$_SESSION`; PHP then uses the browser's session ID to reconnect later requests with temporary data stored on the server.
