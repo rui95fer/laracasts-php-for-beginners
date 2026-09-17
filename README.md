@@ -2592,3 +2592,37 @@
   ```
 
 > **Takeaway:** Middleware centralizes request checks so routes declare access rules while dedicated classes decide whether the request may continue.
+
+## Episode 40 - Manage Passwords Like This For The Remainder of Your Career
+
+- **Read the signed-in user's email from `$_SESSION`, and fall back to `Guest` when no user is signed in.**
+  ```php
+  <p>Hello, <?= $_SESSION['user']['email'] ?? 'Guest' ?>.</p>
+  ```
+
+- **Never store a password in plain text because a database breach would expose credentials that attackers may reuse elsewhere.**
+  ```php
+  // Unsafe: the original password is stored directly.
+  'password' => $password,
+
+  // Correct: store a password hash instead.
+  'password' => password_hash($password, PASSWORD_BCRYPT),
+  ```
+
+- **Use PHP's `password_hash()` function before inserting a new user's password; it returns a hash suitable for later password verification.**
+  ```php
+  $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+
+  $db->query('insert into users (email, password) values (:email, :password)', [
+      'email' => $email,
+      'password' => $hashedPassword,
+  ]);
+  ```
+
+- **Use `PASSWORD_BCRYPT` when you want to force bcrypt, or `PASSWORD_DEFAULT` when you want PHP to choose its recommended algorithm; the default may change in a future PHP version.**
+  ```php
+  $bcryptHash = password_hash($password, PASSWORD_BCRYPT);
+  $defaultHash = password_hash($password, PASSWORD_DEFAULT);
+  ```
+
+> **Takeaway:** Hash passwords before storing them so a stolen users table does not reveal the original passwords.
