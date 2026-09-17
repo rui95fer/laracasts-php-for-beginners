@@ -2626,3 +2626,126 @@
   ```
 
 > **Takeaway:** Hash passwords before storing them so a stolen users table does not reveal the original passwords.
+
+## Episode 41 - Log In and Log Out
+
+- **Show guests Register and Login links, but show authenticated controls when `$_SESSION['user']` exists.**
+  ```php
+  <?php if ($_SESSION['user'] ?? false): ?>
+      <img src="/avatar.jpg" alt="Profile">
+  <?php else: ?>
+      <a href="/register">Register</a>
+      <a href="/login">Login</a>
+  <?php endif; ?>
+  ```
+
+- **Use separate routes for displaying the login form, processing its submission, and logging out; protect login with guest middleware and logout with auth middleware.**
+  ```php
+  $router->get('/login', 'sessions/create.php')->only('guest');
+  $router->post('/login', 'sessions/store.php');
+  $router->delete('/logout', 'sessions/destroy.php')->only('auth');
+  ```
+
+- **Make the login form submit a `POST` request with field names that match the values read from `$_POST`.**
+  ```html
+  <form action="/login" method="POST">
+      <label for="email">Email address</label>
+      <input id="email" type="email" name="email" required>
+
+      <label for="password">Password</label>
+      <input id="password" type="password" name="password" required>
+
+      <button type="submit">Login</button>
+  </form>
+  ```
+
+- **Validate the email and require a password before querying the database; when validation fails, reload the form with field-specific errors.**
+  ```php
+  $email = $_POST['email'] ?? '';
+  $password = $_POST['password'] ?? '';
+  $errors = [];
+
+  if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+      $errors['email'] = 'Email is not valid';
+  }
+
+  if (empty($password)) {
+      $errors['password'] = 'Password is required';
+  }
+
+  if (!empty($errors)) {
+      view('sessions/create.view.php', ['errors' => $errors]);
+      exit();
+  }
+  ```
+
+- **Find the account with a bound email parameter, then compare the submitted password with the stored hash using `password_verify()`.**
+  ```php
+  $user = $db->query('select * from users where email = :email', [
+      'email' => $email,
+  ])->find();
+
+  if ($user && password_verify($password, $user['password'])) {
+      login($user);
+      redirect('/');
+  }
+  ```
+
+- **Use the same generic error for an unknown email and an incorrect password so the login form does not reveal which accounts exist.**
+  ```php
+  view('sessions/create.view.php', [
+      'errors' => [
+          'email' => 'Email or password is incorrect',
+      ],
+  ]);
+  exit();
+  ```
+
+- **When logging a user in, store only the data the application needs and regenerate the session ID to reduce session-fixation risk.**
+  ```php
+  function login(array $user): void
+  {
+      $_SESSION['user'] = [
+          'email' => $user['email'],
+      ];
+
+      session_regenerate_id(true);
+  }
+  ```
+
+- **Use a form with a hidden `_method` field for logout because changing session state should not be triggered by a `GET` link; the router can treat the browser's `POST` as `DELETE`.**
+  ```html
+  <form method="POST" action="/logout">
+      <input type="hidden" name="_method" value="DELETE">
+      <button type="submit">Logout</button>
+  </form>
+  ```
+
+- **Log a user out by clearing the session values, destroying the server-side session, and expiring the session cookie with its configured path and domain.**
+  ```php
+  function logout(): void
+  {
+      $_SESSION = [];
+      session_destroy();
+
+      $params = session_get_cookie_params();
+      setcookie(
+          'PHPSESSID',
+          '',
+          time() - 3600,
+          $params['path'],
+          $params['domain'],
+          $params['secure'],
+          $params['httponly']
+      );
+  }
+  ```
+
+- **Hide authenticated-only navigation links from guests for a cleaner interface, but keep middleware because hiding a link is not access control.**
+  ```php
+  <?php if ($_SESSION['user'] ?? false): ?>
+      <a href="/notes">Notes</a>
+  <?php endif; ?>
+  ```
+
+> **Takeaway:** Login verifies a submitted password against its stored hash and records a minimal session marker; logout removes that marker and invalidates the session safely.
