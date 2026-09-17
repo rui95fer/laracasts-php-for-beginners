@@ -2487,3 +2487,108 @@
   ```
 
 > **Takeaway:** Registration is a repeatable request flow: display a form, validate its input, check the database, create the account, mark the session, and redirect.
+
+## Episode 39 - Introduction to Middleware
+
+- **Middleware is a checkpoint between the incoming request and the controller; it can inspect the request and stop or redirect it before the controller runs.**
+  ```text
+  request -> route match -> middleware -> controller
+  ```
+
+- **Put guest-only and authenticated-user rules on routes instead of repeating session checks in every controller.**
+  ```php
+  $router->get('/register', 'registration/create.php')->only('guest');
+  $router->get('/notes', 'notes/index.php')->only('auth');
+  ```
+
+- **Fluent route configuration works only when router methods return the router instance; otherwise `get()` returns `null` and `->only()` fails.**
+  ```php
+  public function add($method, $uri, $controller)
+  {
+      $this->routes[] = [
+          'method' => $method,
+          'uri' => $uri,
+          'controller' => $controller,
+      ];
+
+      return $this;
+  }
+
+  public function get($uri, $controller)
+  {
+      return $this->add('GET', $uri, $controller);
+  }
+  ```
+
+- **Have `only()` attach a middleware key to the most recently registered route, then return the router so more methods can be chained.**
+  ```php
+  public function only($key)
+  {
+      $lastRoute = array_key_last($this->routes);
+      $this->routes[$lastRoute]['middleware'] = $key;
+
+      return $this;
+  }
+  ```
+
+- **After a route matches, run its middleware before requiring the controller; routes without middleware should continue normally.**
+  ```php
+  if (isset($route['middleware'])) {
+      Middleware::resolve($route['middleware']);
+  }
+
+  return require base_path("http/controllers/{$route['controller']}");
+  ```
+
+- **Middleware classes can share a simple `handle()` contract: guest middleware redirects signed-in users, while auth middleware redirects guests.**
+  ```php
+  class Guest
+  {
+      public function handle(): void
+      {
+          if ($_SESSION['user'] ?? false) {
+              header('Location: /');
+              exit;
+          }
+      }
+  }
+
+  class Auth
+  {
+      public function handle(): void
+      {
+          if (!($_SESSION['user'] ?? false)) {
+              header('Location: /');
+              exit;
+          }
+      }
+  }
+  ```
+
+- **Map short route keys to middleware classes so adding a new middleware does not require another conditional inside the router.**
+  ```php
+  public const MAP = [
+      'guest' => Guest::class,
+      'auth' => Auth::class,
+  ];
+  ```
+
+- **A resolver should return when no middleware key exists and throw a clear exception when a route references an unknown key.**
+  ```php
+  public static function resolve($key): void
+  {
+      if (!$key) {
+          return;
+      }
+
+      $middleware = static::MAP[$key] ?? null;
+
+      if (!$middleware) {
+          throw new Exception("No matching middleware found for key: $key.");
+      }
+
+      (new $middleware)->handle();
+  }
+  ```
+
+> **Takeaway:** Middleware centralizes request checks so routes declare access rules while dedicated classes decide whether the request may continue.
