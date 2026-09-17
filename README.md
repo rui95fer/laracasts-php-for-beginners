@@ -2384,3 +2384,106 @@
   ```
 
 > **Takeaway:** Start the session before using `$_SESSION`; PHP then uses the browser's session ID to reconnect later requests with temporary data stored on the server.
+
+## Episode 38 - Register a New User
+
+- **Use separate routes for displaying a registration form and processing its submission: `GET /register` renders the form, while `POST /register` handles the submitted data.**
+  ```php
+  $router->get('/register', 'registration/create.php');
+  $router->post('/register', 'registration/store.php');
+
+  // registration/create.php
+  view('registration/create.view.php', [
+      'heading' => 'Register',
+  ]);
+  ```
+
+- **Make the form post to the registration endpoint and use field names that match the keys the controller reads from `$_POST`.**
+  ```html
+  <form action="/register" method="POST">
+      <label for="email">Email address</label>
+      <input id="email" type="email" name="email" required>
+
+      <label for="password">Password</label>
+      <input id="password" type="password" name="password" required>
+
+      <button type="submit">Register</button>
+  </form>
+  ```
+
+- **Keep validation errors in an associative array keyed by field so the view can display each message beside the input that needs attention.**
+  ```php
+  <?php if (isset($errors['email'])): ?>
+      <p><?= $errors['email'] ?></p>
+  <?php endif; ?>
+
+  <?php if (isset($errors['password'])): ?>
+      <p><?= $errors['password'] ?></p>
+  <?php endif; ?>
+  ```
+
+- **Validate every submitted value before querying or changing the database, then return the form with its errors when validation fails.**
+  ```php
+  $email = $_POST['email'];
+  $password = $_POST['password'];
+
+  $errors = [];
+
+  if (!Validator::email($email)) {
+      $errors['email'] = 'Please provide a valid email address.';
+  }
+
+  if (!Validator::string($password, 7, 255)) {
+      $errors['password'] = 'Password must be at least 7 characters.';
+  }
+
+  if (!empty($errors)) {
+      view('registration/create.view.php', [
+          'errors' => $errors,
+      ]);
+      exit;
+  }
+  ```
+
+- **Check whether the submitted email already belongs to a user by using a bound parameter; `find()` returns the matching row or a false value when no row exists.**
+  ```php
+  $db = App::resolve(Database::class);
+
+  $user = $db->query('select * from users where email = :email', [
+      'email' => $email,
+  ])->find();
+
+  if ($user) {
+      view('registration/create.view.php', [
+          'errors' => ['email' => 'Email is already taken.'],
+      ]);
+      exit;
+  }
+  ```
+
+- **When the email is available, insert the new account, record a simple user marker in the session, and redirect to the home page; stop execution after sending the redirect.**
+  ```php
+  $db->query('insert into users (email, password) values (:email, :password)', [
+      'email' => $email,
+      'password' => $password, // Temporary episode example; never store passwords this way in production.
+  ]);
+
+  $_SESSION['user'] = [
+      'email' => $email,
+  ];
+
+  header('Location: /');
+  exit;
+  ```
+
+- **Use the session marker defensively in shared navigation so guests see registration/login links while signed-in users see authenticated controls.**
+  ```php
+  <?php if ($_SESSION['user'] ?? false): ?>
+      <span>Signed in</span>
+  <?php else: ?>
+      <a href="/register">Register</a>
+      <a href="/login">Login</a>
+  <?php endif; ?>
+  ```
+
+> **Takeaway:** Registration is a repeatable request flow: display a form, validate its input, check the database, create the account, mark the session, and redirect.
