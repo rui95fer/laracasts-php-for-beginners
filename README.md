@@ -2848,3 +2848,123 @@
   ```
 
 > **Takeaway:** A focused form object hides validation details while allowing the controller to clearly express the login flow.
+
+## Episode 43 - Extract an Authenticator Class
+
+- **Give authentication its own class when a controller is responsible for finding a user, checking a password, and starting a session.** The `Authenticator` hides the database lookup and password verification behind a meaningful method.
+  ```php
+  // Before: the controller knows the authentication details.
+  $user = $db->query('select * from users where email = :email', [
+      'email' => $email,
+  ])->find();
+
+  if ($user && password_verify($password, $user['password'])) {
+      login($user);
+  }
+
+  // After: the controller asks a focused object to attempt authentication.
+  $auth = new Authenticator();
+  $auth->attempt($email, $password);
+  ```
+
+- **Put the lookup and password check inside `attempt()`, then return a Boolean so the controller can decide what the page should do next.** `true` means the user was authenticated; `false` means the controller should show the login form again.
+  ```php
+  public function attempt(string $email, string $password): bool
+  {
+      $db = App::resolve(Database::class);
+
+      $user = $db->query('select * from users where email = :email', [
+          'email' => $email,
+      ])->find();
+
+      if ($user && password_verify($password, $user['password'])) {
+          $this->login($user);
+
+          return true;
+      }
+
+      return false;
+  }
+
+  $auth = new Authenticator();
+
+  if ($auth->attempt($email, $password)) {
+      redirect('/');
+  }
+  ```
+
+- **Keep session behavior with the authenticator because logging in and logging out are authentication responsibilities.** The class stores only the needed user data, regenerates the session ID after login, and clears the session during logout.
+  ```php
+  public function login(array $user): void
+  {
+      $_SESSION['user'] = [
+          'email' => $user['email'],
+      ];
+
+      session_regenerate_id(true);
+  }
+
+  public function logout(): void
+  {
+      $_SESSION = [];
+      session_destroy();
+
+      $params = session_get_cookie_params();
+      setcookie(
+          'PHPSESSID',
+          '',
+          time() - 3600,
+          $params['path'],
+          $params['domain'],
+          $params['secure'],
+          $params['httponly']
+      );
+  }
+  ```
+
+- **Wrap repeated redirect behavior in a helper so its intention is readable and the security-related `exit()` is not forgotten.**
+  ```php
+  function redirect($path): void
+  {
+      header("Location: {$path}");
+      exit();
+  }
+
+  redirect('/');
+  ```
+
+- **When two failure paths should render the same form, make their errors use the same source before merging the paths.** `LoginForm::error()` lets an authentication failure append an error to the form’s existing validation errors.
+  ```php
+  class LoginForm
+  {
+      protected array $errors = [];
+
+      public function error(string $field, string $message): void
+      {
+          $this->errors[$field] = $message;
+      }
+  }
+  ```
+
+- **Keep the controller focused on the request flow: validate, attempt authentication, add an error when authentication fails, and render the form once.**
+  ```php
+  $email = $_POST['email'] ?? '';
+  $password = $_POST['password'] ?? '';
+  $form = new LoginForm();
+
+  if ($form->validate($email, $password)) {
+      $auth = new Authenticator();
+
+      if ($auth->attempt($email, $password)) {
+          redirect('/');
+      }
+
+      $form->error('email', 'No user found with that email and password combination');
+  }
+
+  view('sessions/create.view.php', [
+      'errors' => $form->errors(),
+  ]);
+  ```
+
+> **Takeaway:** Extract authentication knowledge into a focused class, return a simple result to the controller, and reuse one form-error path for every login failure.
