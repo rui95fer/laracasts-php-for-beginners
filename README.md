@@ -2749,3 +2749,102 @@
   ```
 
 > **Takeaway:** Login verifies a submitted password against its stored hash and records a minimal session marker; logout removes that marker and invalidates the session safely.
+
+## Episode 42 - Extract a Form Validation Object
+
+- **Refactor code when its intention is difficult to see; a controller should make the login flow clear instead of containing every validation detail.**
+  ```php
+  // Before: the controller builds and checks validation errors itself.
+  $errors = [];
+
+  if (!Validator::email($email)) {
+      $errors['email'] = 'Email is not valid';
+  }
+
+  if (!Validator::string($password)) {
+      $errors['password'] = 'Password is required';
+  }
+
+  // After: the controller describes the intent.
+  $form = new LoginForm();
+
+  if (!$form->validate($email, $password)) {
+      return view('sessions/create.view.php', [
+          'errors' => $form->errors(),
+      ]);
+  }
+  ```
+
+- **Keep reusable infrastructure in `Core`, but place classes that are specific to this application’s HTTP layer under `Http`.**
+  ```text
+  Core/                 # reusable application infrastructure
+  Http/
+    controllers/        # application controllers
+    Forms/              # application-specific form objects
+      LoginForm.php
+  ```
+
+- **When every route controller lives in one directory, make the router add that directory automatically so route definitions stay focused on the route itself.**
+  ```php
+  // routes.php
+  $router->get('/about', 'about.php');
+  $router->post('/login', 'sessions/store.php');
+
+  // Router.php
+  return require base_path("http/controllers/{$route['controller']}");
+  ```
+
+- **A form object groups the validation rules for one form, giving the class a clear responsibility and a meaningful name.**
+  ```php
+  <?php
+
+  namespace Http\Forms;
+
+  use Core\Validator;
+
+  class LoginForm
+  {
+      protected array $errors = [];
+
+      public function validate($email, $password): bool
+      {
+          if (!Validator::email($email)) {
+              $this->errors['email'] = 'Email is not valid';
+          }
+
+          if (!Validator::string($password)) {
+              $this->errors['password'] = 'Password is required';
+          }
+
+          return empty($this->errors);
+      }
+  }
+  ```
+
+- **Let `validate()` return a Boolean: `true` means there are no errors, while `false` means the caller should stop and display the form again.**
+  ```php
+  $form = new LoginForm();
+
+  if ($form->validate($email, $password)) {
+      // Continue with authentication.
+  } else {
+      // Show the form with validation errors.
+  }
+  ```
+
+- **Keep the errors property protected and expose it through a getter; this allows callers to read errors without directly changing the object’s internal state.**
+  ```php
+  class LoginForm
+  {
+      protected array $errors = [];
+
+      public function errors(): array
+      {
+          return $this->errors;
+      }
+  }
+
+  $errors = $form->errors();
+  ```
+
+> **Takeaway:** A focused form object hides validation details while allowing the controller to clearly express the login flow.
