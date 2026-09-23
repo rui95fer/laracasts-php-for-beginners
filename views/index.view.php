@@ -4,7 +4,7 @@
 
     <main>
         <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-            <p>Hello, <?= $_SESSION['user']['email'] ?? 'Guest' ?>. Welcome to our website!</p>
+            <p>Hello, <?= \Core\Session::get('user')['email'] ?? 'Guest' ?>. Welcome to our website!</p>
         </div>
     </main>
 

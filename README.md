@@ -2968,3 +2968,81 @@
   ```
 
 > **Takeaway:** Extract authentication knowledge into a focused class, return a simple result to the controller, and reuse one form-error path for every login failure.
+
+## Episode 44 - The PRG Pattern (and Session Flashing)
+
+- **Use the POST-Redirect-GET (PRG) pattern after a form submission: redirect after handling the POST so the browser loads a fresh GET request.** This avoids leaving the form on a POST response, which can cause a document-expired warning or resubmit the form on refresh.
+  ```php
+  use Core\Session;
+
+  // Before: return the form directly from the POST request.
+  view('sessions/create.view.php', ['errors' => $errors]);
+
+  // After: redirect to the login page after storing the errors.
+  Session::flash('errors', $errors);
+  redirect('/login');
+  ```
+
+- **Use flash data for values that must survive a redirect but should be removed after the next page request.** Regular session data, such as the logged-in user, remains available across requests.
+  ```php
+  use Core\Session;
+
+  // The POST request stores errors for the redirected GET request.
+  Session::flash('errors', $form->errors());
+
+  // The GET controller reads the errors while rendering the form.
+  view('sessions/create.view.php', [
+      'errors' => Session::get('errors', []),
+  ]);
+  ```
+
+- **Encapsulate session access in a `Core\Session` helper so controllers do not need to know the special flash key.** The helper provides `put`, `get`, `has`, `flash`, `unflash`, `flush`, and `destroySession` methods.
+  ```php
+  namespace Core;
+
+  class Session
+  {
+      public static function flash($key, $value): void
+      {
+          $_SESSION['_flash'][$key] = $value;
+      }
+  }
+  ```
+
+- **Have `get()` check flashed data first, then regular session data, and finally return the supplied default.** This keeps `_flash` private to the helper while giving callers one simple way to read either kind of value.
+  ```php
+  namespace Core;
+
+  class Session
+  {
+      public static function get($key, $default = null)
+      {
+          if (isset($_SESSION['_flash'][$key])) {
+              return $_SESSION['_flash'][$key];
+          }
+
+          return $_SESSION[$key] ?? $default;
+      }
+  }
+  ```
+
+- **Call `unflash()` after routing and rendering the response so flashed values disappear after one page request.** A redirect exits the POST request, leaving the flash data available to the following GET.
+  ```php
+  use Core\Session;
+
+  $router->route($uri, $method);
+  Session::unflash();
+  ```
+
+- **Use `flush()` to clear session values and `destroySession()` to end the session and expire its cookie during logout.** Keeping these operations on `Session` centralizes session cleanup.
+  ```php
+  use Core\Session;
+
+  // Clear values while keeping the session active.
+  Session::flush();
+
+  // In logout, use this instead to destroy the session and expire its cookie.
+  Session::destroySession();
+  ```
+
+> **Takeaway:** PRG gives form submissions a fresh GET response, while flash data carries errors across the redirect for just long enough to display them once.

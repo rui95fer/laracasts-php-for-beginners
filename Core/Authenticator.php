@@ -4,7 +4,7 @@ namespace Core;
 
 class Authenticator
 {
-        public function attempt(string $email, string $password): bool
+    public function attempt(string $email, string $password): bool
     {
         $db = App::resolve(Database::class);
 
@@ -22,21 +22,17 @@ class Authenticator
         return false;
     }
 
-        public function login(array $user): void
+    public function login(array $user): void
     {
-        $_SESSION['user'] = [
+        Session::put('user', [
             'email' => $user['email']
-        ];
+        ]);
 
         session_regenerate_id(true);
     }
 
     public function logout(): void
     {
-        $_SESSION = [];
-        session_destroy();
-
-        $params = session_get_cookie_params();
-        setcookie('PHPSESSID', '', time() - 3600, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
+        Session::destroySession();
     }
 }

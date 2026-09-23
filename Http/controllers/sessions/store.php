@@ -1,11 +1,8 @@
 <?php
 
-use Core\App;
 use Core\Authenticator;
-use Core\Database;
+use Core\Session;
 use Http\Forms\LoginForm;
-
-$db = App::resolve(Database::class);
 
 $email = $_POST['email'] ?? '';
 $password = $_POST['password'] ?? '';
@@ -22,6 +19,5 @@ if ($form->validate($email, $password)) {
     $form->error('email', 'No user found with that email and password combination');
 }
 
-view('sessions/create.view.php', [
-    'errors' => $form->errors()
-]);
+Session::flash('errors', $form->errors());
+redirect('/login');
