@@ -3046,3 +3046,50 @@
   ```
 
 > **Takeaway:** PRG gives form submissions a fresh GET response, while flash data carries errors across the redirect for just long enough to display them once.
+
+## Episode 45 - Flash Old Form Data to the Session
+
+- **With POST-Redirect-GET, the redirected GET cannot read the previous request's `$_POST`; flash submitted values before redirecting so the form can be repopulated.**
+  ```php
+  use Core\Session;
+
+  Session::flash('old', [
+      'email' => $_POST['email'] ?? '',
+  ]);
+  redirect('/login');
+  ```
+
+- **Use `Session::getOld()` to read a submitted field without reaching into the nested flash array, and provide a fallback for requests with no old value.**
+  ```php
+  namespace Core;
+
+  class Session
+  {
+      public static function getOld($key, $default = '')
+      {
+          return $_SESSION['_flash']['old'][$key] ?? $default;
+      }
+  }
+  ```
+
+- **Wrap the session lookup in a global `old()` helper so views do not need to know the session class path.**
+  ```php
+  function old($key, $default = '')
+  {
+      return \Core\Session::getOld($key, $default);
+  }
+  ```
+
+- **Use `old()` to refill fields after a failed submission; the default is an empty string, and password fields should remain blank.**
+  ```php
+  <input type="email" name="email" value="<?= htmlspecialchars(old('email')) ?>">
+  <input type="password" name="password">
+  ```
+
+- **Pass a custom default when a form should fall back to an existing value; a submitted old value takes precedence.**
+  ```php
+  // For an edit form, use the saved email when there is no submitted old value.
+  $email = old('email', $user['email']);
+  ```
+
+> **Takeaway:** Flash old form values across redirects, then use a small `old()` helper to restore them in the next request without exposing session internals to the view.

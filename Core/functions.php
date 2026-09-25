@@ -1,6 +1,7 @@
 <?php
 
 use Core\Response;
+use Core\Session;
 
 function dd($value): void
 {
@@ -49,4 +50,9 @@ function redirect($path): void
 {
     header("Location: {$path}");
     exit();
+}
+
+function old($key, $default = '')
+{
+    return Session::getOld($key, $default);
 }

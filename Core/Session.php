@@ -29,6 +29,11 @@ class Session
         $_SESSION['_flash'][$key] = $value;
     }
 
+    public static function getOld($key, $default = '')
+    {
+        return $_SESSION['_flash']['old'][$key] ?? $default;
+    }
+
     public static function unflash(): void
     {
         unset($_SESSION['_flash']);
