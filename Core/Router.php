@@ -65,6 +65,39 @@ class Router
         $this->abort();
     }
 
+    public function previousUrl(): string
+    {
+        $referer = $_SERVER['HTTP_REFERER'] ?? '';
+        $currentHost = $_SERVER['HTTP_HOST'] ?? '';
+        $refererParts = parse_url($referer);
+        $currentHostParts = parse_url('http://' . $currentHost);
+
+        if (!is_array($refererParts) || !is_array($currentHostParts)) {
+            return '/login';
+        }
+
+        $refererHost = $refererParts['host'] ?? '';
+        $requestHost = $currentHostParts['host'] ?? '';
+        $path = $refererParts['path'] ?? '';
+        $query = $refererParts['query'] ?? null;
+
+        if (
+            !in_array(strtolower($refererParts['scheme'] ?? ''), ['http', 'https'], true)
+            || $refererHost === ''
+            || $requestHost === ''
+            || strcasecmp($refererHost, $requestHost) !== 0
+            || $path === ''
+            || $path[0] !== '/'
+            || str_starts_with($path, '//')
+            || str_contains($path, '\\')
+            || preg_match('/[\r\n]/', $query ?? '')
+        ) {
+            return '/login';
+        }
+
+        return $path . ($query !== null ? '?' . $query : '');
+    }
+
     public function abort($code = 404): void
     {
         http_response_code($code);

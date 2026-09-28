@@ -3093,3 +3093,71 @@
   ```
 
 > **Takeaway:** Flash old form values across redirects, then use a small `old()` helper to restore them in the next request without exposing session internals to the view.
+
+## Episode 46 - Automatically Redirect Back Upon Failed Validation
+
+- **Move validation failure handling out of individual controllers by making the form's static `validate()` method return a valid form or throw a `ValidationException`.** The form can validate its attributes as soon as it is constructed, so the controller continues only when validation succeeds.
+  ```php
+  $attributes = [
+      'email' => $_POST['email'] ?? '',
+      'password' => $_POST['password'] ?? '',
+  ];
+
+  // Before: each controller handled the false result itself.
+  // if (! $form->validate($attributes['email'], $attributes['password'])) {
+  //     Session::flash('errors', $form->errors());
+  //     redirect('/login');
+  // }
+
+  // After: validation returns a form or throws on failure.
+  $form = LoginForm::validate($attributes);
+  ```
+
+- **Include errors and submitted values in the validation exception because throwing interrupts the assignment to `$form`.** The front controller can then recover everything needed to show the form again; the exception can expose those values through getters or public read-only properties.
+  ```php
+  // Simplified static factory flow inside LoginForm::validate().
+  $form = new static($attributes);
+
+  if ($form->failed()) {
+      ValidationException::throw(
+          $form->errors(),
+          $form->attributes
+      );
+  }
+
+  return $form;
+  ```
+
+- **Catch validation exceptions around routing so every controller gets the same flash-and-redirect behavior.** Redirect to the previous URL instead of hard-coding a form route.
+  ```php
+  try {
+      $router->route($uri, $method);
+  } catch (ValidationException $exception) {
+      // Illustrative getter names; read-only properties are another option.
+      Session::flash('errors', $exception->errors());
+      Session::flash('old', $exception->old());
+
+      redirect($router->previousUrl());
+  }
+  ```
+
+- **Send authentication failures through the same exception path by adding an error to the form and then throwing it.** The controller can read as a short request flow: validate, attempt authentication, then redirect on success.
+  ```php
+  $form = LoginForm::validate($attributes);
+  $authenticator = new Authenticator();
+  $signedIn = $authenticator->attempt(
+      $attributes['email'],
+      $attributes['password']
+  );
+
+  if (! $signedIn) {
+      $form->error(
+          'email',
+          'No user found with that email and password combination'
+      )->throw();
+  }
+
+  redirect('/');
+  ```
+
+> **Takeaway:** Let forms report failures, exceptions carry the response data, and the front controller handle the shared redirect so controllers can focus on the request flow.
