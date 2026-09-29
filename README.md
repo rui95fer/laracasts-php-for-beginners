@@ -3161,3 +3161,57 @@
   ```
 
 > **Takeaway:** Let forms report failures, exceptions carry the response data, and the front controller handle the shared redirect so controllers can focus on the request flow.
+
+## Episode 47 - Composer and Free Autoloading
+
+- **Use Composer to add existing packages for common needs instead of building every integration or tool yourself.**
+  ```text
+  Amazon S3 storage: an SDK
+  Testing: PHPUnit, Mockery, or Pest
+  Command-line apps: Symfony Console; Termwind can style terminal output
+  ```
+
+- **Put Composer's executable somewhere on your shell's `PATH` so you can run it from any project directory.**
+  ```bash
+  composer
+  ```
+
+- **Run `composer init` to create `composer.json`, then `composer install` to prepare the project's dependencies and generated autoloader.** Even with no packages listed yet, Composer creates `vendor/autoload.php`; add `vendor/` to `.gitignore` because it can be generated again.
+  ```bash
+  composer init
+  composer install
+  ```
+  ```gitignore
+  /vendor
+  ```
+
+- **Use PSR-4 in `composer.json` to map each top-level namespace to its matching source directory.** A prefix must end with a namespace separator; the doubled backslash in JSON represents one backslash.
+  ```json
+  {
+    "autoload": {
+      "psr-4": {
+        "Core\\": "Core/",
+        "Http\\": "Http/"
+      }
+    }
+  }
+  ```
+
+- **Run `composer dump-autoload` after changing the autoload configuration so Composer regenerates its mapping files.**
+  ```bash
+  composer dump-autoload
+  ```
+
+- **Require Composer's generated autoloader from the front controller, then remove the project's manual autoloader.** Do this after loading the `base_path()` helper and before code that uses the mapped classes.
+  ```php
+  // Before: register a custom class loader.
+  spl_autoload_register(function ($class) {
+      $class = str_replace('\\', DIRECTORY_SEPARATOR, $class);
+      require base_path("{$class}.php");
+  });
+
+  // After: use Composer's generated class loader instead.
+  require base_path('vendor/autoload.php');
+  ```
+
+> **Takeaway:** Composer manages third-party dependencies and provides the autoloader that maps namespaces to files throughout a PHP project.
