@@ -3215,3 +3215,63 @@
   ```
 
 > **Takeaway:** Composer manages third-party dependencies and provides the autoloader that maps namespaces to files throughout a PHP project.
+
+## Episode 48 - Install Two Composer Packages: Collections and PestPHP
+
+- **Find packages on Packagist or with `composer search`, then require the package you choose by its Composer name.** The `illuminate/collections` package provides Laravel's collection class.
+  ```bash
+  composer search collections
+  composer require illuminate/collections
+  ```
+
+- **Use a collection when you want convenient methods for working with an array.** It wraps the items and provides operations such as `contains`, `map`, and `filter`.
+  ```php
+  use Illuminate\Support\Collection;
+
+  require __DIR__ . '/vendor/autoload.php';
+
+  $numbers = new Collection(range(1, 10));
+
+  $numbers->contains(10); // true
+
+  $smallNumbers = $numbers->filter(
+      fn ($number) => $number <= 5
+  );
+
+  var_export($smallNumbers->all()); // [0 => 1, 1 => 2, 2 => 3, 3 => 4, 4 => 5]
+  ```
+
+- **Put development tools such as Pest in `require-dev`; production code does not need them at runtime.** Pest builds on PHPUnit and offers a concise way to write tests.
+  ```bash
+  composer require pestphp/pest --dev
+  vendor/bin/pest --init
+  vendor/bin/pest
+  ```
+
+- **Write a test as Arrange, Act, Assert: prepare the dependency, call the behavior, then check the result.** Naming test files with the `Test.php` suffix makes their purpose clear.
+  ```php
+  use Core\Container;
+
+  test('it can resolve a binding from the container', function () {
+      // Arrange
+      $container = new Container();
+      $container->bind('foo', fn () => 'bar');
+
+      // Act
+      $result = $container->resolve('foo');
+
+      // Assert
+      expect($result)->toBe('bar');
+  });
+  ```
+
+- **Automated tests catch behavior changes and make later refactoring safer.** If `resolve()` returns the closure instead of calling it, the expectation above fails because the result is no longer `'bar'`.
+  ```php
+  // Correct: resolve the binding and return its value.
+  return $resolver();
+
+  // Regression: this returns the closure itself, so the test fails.
+  return $resolver;
+  ```
+
+> **Takeaway:** Composer lets you reuse focused packages, and automated tests give you quick evidence that your code still behaves as expected.

@@ -6,5 +6,19 @@
             "Core\\": "Core/",
             "Http\\": "Http/"
         }
+    },
+    "scripts": {
+        "test": "pest"
+    },
+    "require": {
+        "illuminate/collections": "^13.34"
+    },
+    "require-dev": {
+        "pestphp/pest": "^5.2.1"
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
     }
 }
