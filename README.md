@@ -3356,3 +3356,77 @@
   ```
 
 > **Takeaway:** Tests help describe a feature’s rules and verify that the implementation follows them; choose test-first or test-after based on what helps you reason about the behavior.
+
+## Episode 50 - The Next Step in Your PHP Journey
+
+- **Use a framework for common infrastructure such as routing, sessions, validation, middleware, and authentication; these components have mature, tested implementations.** The goal of building a small framework was to understand the ideas, not to maintain every piece yourself.
+  ```text
+  Framework examples from the episode: Laravel and Symfony
+  ```
+
+- **Use Artisan, Laravel's command-line tool, to run the development server and generate common project files.** The recording used Laravel 10.2.
+  ```bash
+  php artisan serve
+  php artisan make:controller HomeController
+  ```
+
+- **In Laravel 10.2, define web routes in `routes/web.php`, pass data to a view, and use Blade to render it.** Views in the recording live under `resources/views` and use the `.blade.php` extension; `{{ ... }}` escapes displayed values, while directives such as `@if` and `@endif` provide template conditionals.
+  ```php
+  use Illuminate\Support\Facades\Route;
+
+  Route::get('/', function () {
+      return view('welcome', ['greeting' => 'Hello, universe']);
+  });
+  ```
+  ```php
+  <!-- resources/views/welcome.blade.php -->
+  <h1>{{ $greeting }}</h1>
+
+  @if ($greeting)
+      <p>Welcome!</p>
+  @endif
+  ```
+
+- **For an API endpoint, return an array from a route to produce a JSON response; page routes can return views instead.**
+  ```php
+  use Illuminate\Support\Facades\Route;
+
+  Route::get('/api/status', function () {
+      return ['status' => 'ok'];
+  });
+  ```
+  ```text
+  {"status":"ok"}
+  ```
+
+- **Move route logic into a controller when an inline callback no longer gives the application enough structure.** A single-action controller handles its route through PHP's `__invoke` method.
+  ```php
+  // app/Http/Controllers/HomeController.php
+  namespace App\Http\Controllers;
+
+  class HomeController extends Controller
+  {
+      public function __invoke()
+      {
+          return view('welcome', ['greeting' => 'Hello, universe']);
+      }
+  }
+  ```
+
+  ```php
+  // routes/web.php
+  use Illuminate\Support\Facades\Route;
+  use App\Http\Controllers\HomeController;
+
+  Route::get('/', HomeController::class);
+  ```
+
+- **Use Laravel's directories to find code by role: routes describe request handling, controllers organize actions, views render pages, and `public` holds public assets.**
+  ```text
+  routes/web.php
+  app/Http/Controllers/
+  resources/views/
+  public/
+  ```
+
+> **Takeaway:** Learn the fundamentals by building small pieces, then use a framework's tested tools to build real applications with less infrastructure code.
