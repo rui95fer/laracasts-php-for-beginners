@@ -3275,3 +3275,84 @@
   ```
 
 > **Takeaway:** Composer lets you reuse focused packages, and automated tests give you quick evidence that your code still behaves as expected.
+
+## Episode 49 - Testing Approaches, Terms, and Considerations
+
+- **A unit test checks one small part of the code, while a feature test checks a wider behavior that may involve several parts of the application.** A validator method is a small unit; a referral workflow is a feature.
+  ```php
+  use Core\Validator;
+
+  test('the validator accepts a non-empty string', function () {
+      expect(Validator::string('foobar'))->toBeTrue();
+  });
+  ```
+  ```text
+  Feature test idea (illustrative workflow):
+  A subscriber shares a referral code, another user redeems it,
+  and the test checks that the referral rules are satisfied.
+  ```
+
+- **Use a test description to write down what a feature should do before its implementation is settled.** This can clarify the workflow and surface useful domain terms, such as redeeming a referral code.
+  ```text
+  Feature: subscribers can earn money by referring friends.
+  Workflow: create a subscriber, sign them in, generate a referral code,
+  then have another user redeem that code.
+  ```
+
+- **Test-first development writes an expectation before the implementation; writing tests after implementation is also useful when that fits the task better.** Include both a passing and failing comparison so a hard-coded `true` cannot satisfy the test.
+  ```php
+  use Core\Validator;
+
+  test('it checks whether a value is greater than an amount', function () {
+      expect(Validator::greaterThan(10, 1))->toBeTrue();
+      expect(Validator::greaterThan(10, 100))->toBeFalse();
+  });
+  ```
+
+  ```php
+  // Tutorial example addition to Core/Validator.php
+  namespace Core;
+
+  class Validator
+  {
+      public static function greaterThan(int $value, int $amount): bool
+      {
+          return $value > $amount;
+      }
+  }
+  ```
+
+- **Write validator tests for ordinary values and boundary cases such as empty input and a minimum length.** These examples use the `Core\Validator` methods from the project.
+  ```php
+  use Core\Validator;
+
+  test('it validates strings', function () {
+      expect(Validator::string('foobar'))->toBeTrue();
+      expect(Validator::string(false))->toBeFalse();
+      expect(Validator::string(''))->toBeFalse();
+      expect(Validator::string('foobar', 20))->toBeFalse();
+  });
+  ```
+
+- **Test both invalid and valid email addresses, and make the expected return type explicit when callers should receive a Boolean.** A failed expectation can reveal that the implementation returns a different value than the test assumed.
+  ```php
+  test('it validates email addresses', function () {
+      expect(Validator::email('foobar'))->toBeFalse();
+      expect(Validator::email('learner@example.com'))->toBeTrue();
+  });
+  ```
+
+  ```php
+  // A parameter type states the expected input; a return type states the expected output.
+  namespace Core;
+
+  class Validator
+  {
+      public static function email(string $value): bool
+      {
+          return filter_var($value, FILTER_VALIDATE_EMAIL);
+      }
+  }
+  ```
+
+> **Takeaway:** Tests help describe a feature’s rules and verify that the implementation follows them; choose test-first or test-after based on what helps you reason about the behavior.
